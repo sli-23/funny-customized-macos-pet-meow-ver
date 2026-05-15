@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+        .panel {
+            background: rgba(30, 30, 40, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 8px;
+            margin: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .panel-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #eee;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+        .panel-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .panel-item:active {
+            background: rgba(233,69,96,0.3);
+        }
+        .panel-item .icon {
+            width: 18px;
+            text-align: center;
+            font-size: 15px;
+        }
+        .divider {
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 4px 8px;
+        }
+        .panel-item.quit {
+            color: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="panel-item" onclick="showPet()">
+            <span class="icon">🐱</span>
+            <span>Show Pet</span>
+        </div>
+        <div class="panel-item" onclick="hidePet()">
+            <span class="icon">👻</span>
+            <span>Hide Pet</span>
+        </div>
+        <div class="divider"></div>
+        <div class="panel-item" onclick="openSettings()">
+            <span class="icon">⚙</span>
+            <span>Settings</span>
+        </div>
+        <div class="divider"></div>
+        <div class="panel-item quit" onclick="quitApp()">
+            <span class="icon">✕</span>
+            <span>Quit</span>
+        </div>
+    </div>
+
+    <script>
+        const invoke = window.__TAURI_INTERNALS__.invoke;
+
+        function hidePanel() {
+            invoke('plugin:window|hide', { label: 'tray_panel' });
+        }
+
+        function showPet() {
+            invoke('plugin:window|show', { label: 'main' });
+            invoke('plugin:window|set_focus', { label: 'main' });
+            hidePanel();
+        }
+
+        function hidePet() {
+            invoke('plugin:window|hide', { label: 'main' });
+            hidePanel();
+        }
+
+        function openSettings() {
+            invoke('plugin:window|show', { label: 'settings' });
+            invoke('plugin:window|set_focus', { label: 'settings' });
+            hidePanel();
+        }
+
+        function quitApp() {
+            invoke('plugin:app|app_hide');
+            window.close();
+            // Force quit via process
+            invoke('plugin:window|destroy', { label: 'main' }).catch(() => {});
+            invoke('plugin:window|destroy', { label: 'settings' }).catch(() => {});
+            invoke('plugin:window|destroy', { label: 'tray_panel' }).catch(() => {});
+        }
+
+        // Hide panel when clicking outside
+        document.addEventListener('blur', hidePanel);
+        window.addEventListener('blur', hidePanel);
+    </script>
+</body>
+</html>

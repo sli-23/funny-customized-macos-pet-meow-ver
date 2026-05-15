@@ -1,0 +1,8 @@
+{
+  "name": "karate-dog-pet",
+  "version": "1.0.0",
+  "description": "A pixel art karate dog desktop pet",
+  "scripts": {
+    "tauri": "cargo tauri"
+  }
+}
