@@ -30,127 +30,390 @@
             display: block;
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
         }
+        @media (prefers-color-scheme: dark) {
+            .pet {
+                filter: drop-shadow(1px 0 0 white) drop-shadow(-1px 0 0 white) drop-shadow(0 1px 0 white) drop-shadow(0 -1px 0 white);
+            }
+        }
+        .pet:hover { cursor: pointer; }
+        .pet.bounce {
+            animation: petBounce 0.4s ease;
+        }
+        .pet.shake {
+            animation: petShake 0.5s ease;
+        }
+        .pet.wiggle {
+            animation: petWiggle 0.6s ease;
+        }
+        @keyframes petBounce {
+            0%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-12px); }
+            60% { transform: translateY(-4px); }
+        }
+        @keyframes petShake {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-8deg); }
+            40% { transform: rotate(8deg); }
+            60% { transform: rotate(-5deg); }
+            80% { transform: rotate(5deg); }
+        }
+        @keyframes petWiggle {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
         .bubble-wrapper {
             align-self: center;
             display: none;
-            margin-left: -20px;
+            margin-left: -35px;
         }
         .bubble-wrapper.show { display: block; }
+        .pixel-bubble {
+            position: relative;
+            background: white;
+            border: 3px solid black;
+            padding: 6px 10px;
+            margin-left: 12px;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: bold;
+            color: black;
+            max-width: 220px;
+            min-width: 40px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            image-rendering: pixelated;
+        }
+        /* Pixel staircase tail pointing left toward pet */
+        .pixel-bubble::before,
+        .pixel-bubble::after { content: ''; position: absolute; }
+        .pixel-bubble::before {
+            left: -9px;
+            top: 50%;
+            margin-top: -1px;
+            width: 0; height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 9px solid black;
+        }
+        .pixel-bubble::after {
+            left: -5px;
+            top: 50%;
+            margin-top: 1px;
+            width: 0; height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 6px solid white;
+        }
+        .chat-input-wrapper {
+            position: absolute;
+            bottom: 5px;
+            left: 210px;
+            display: none;
+            z-index: 10;
+        }
+        .chat-input-wrapper.show { display: flex; align-items: center; gap: 4px; }
+        .chat-input-wrapper { -webkit-user-select: auto; user-select: auto; }
+        .chat-input {
+            width: 180px;
+            padding: 6px 10px;
+            border: 3px solid black;
+            background: white;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: bold;
+            outline: none;
+            image-rendering: pixelated;
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+        .chat-input::placeholder { color: #999; }
     </style>
 </head>
-<body data-tauri-drag-region="deep">
-    <div class="container">
-        <img class="pet" src="claude_meow.gif" draggable="false" id="pet">
-        <div class="bubble-wrapper" id="bubble">
-            <svg id="bubbleSvg" height="50" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"></svg>
+<body>
+    <div class="container" data-tauri-drag-region>
+        <img class="pet" src="assets/claude_meow.gif" draggable="false" id="pet" data-tauri-drag-region>
+        <div class="bubble-wrapper" id="bubble" data-tauri-drag-region>
+        </div>
+        <div class="chat-input-wrapper" id="chatWrapper">
+            <input class="chat-input" id="chatInput" type="text" placeholder="Talk to me~" maxlength="100">
         </div>
     </div>
 
     <script>
-        const invoke = window.__TAURI_INTERNALS__
-            ? window.__TAURI_INTERNALS__.invoke
-            : () => {};
-
-        const nicknames = ['MeowMeow', '喵喵', '小猫', '晴晴', 'KatMeow', 'Meow'];
-        function pickNick() {
-            return nicknames[Math.floor(Math.random() * nicknames.length)];
+        // ── Tauri bridge ──
+        function invoke(cmd, args) {
+            if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke) {
+                return window.__TAURI_INTERNALS__.invoke(cmd, args);
+            }
+            return Promise.reject('Tauri not ready');
         }
 
-        const clickMessages = [
-            '干嘛碰{n}！😾', '哎呀！别戳{n}！🐾', '喵！！疼！😿',
-            '又碰{n}！不理你了！', '别摸了别摸了！🙀',
-            '哼～再碰{n}咬你哦！', 'Stop poking {n}! 😤',
-            '喵呜～{n}喜欢～😽', '再碰{n}就告诉Claude！'
-        ];
+        // ── Helpers ──
+        const nicknames = ['人类', 'hooman', '铲屎官', '主人', 'buddy'];
+        function pickNick() { return nicknames[Math.floor(Math.random() * nicknames.length)]; }
+        function fillNick(msg) { return msg.replace(/\{n\}/g, pickNick()); }
+        function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
+        // ── Message pools ──
+        const tapMessages = [
+            '喵？🐱', '嗯？', '哎～', '呜～', 'meow~',
+            '嘻嘻～😸', '喵呜!', '♪～', '哼!', 'nya~',
+            '摸摸～🐾', '嗷呜?', '...💤', '嘿!', '~喵',
+        ];
+        const pokeMessages = [
+            '别碰我！😾', '哎呀！别戳{n}！🐾', '喵！！疼！😿',
+            '又戳！不理你了！💢', '别摸了别摸了！🙀',
+            '哼～再碰咬你哦！😤', '手拿开！是{n}的毛！',
+            '喵呜～{n}其实喜欢～😽', '再碰就告诉Claude！🤖',
+            '你好烦！但{n}原谅你～', '讨厌！才不疼呢…😿',
+            '呜呜～{n}被欺负了！', '轻点！{n}很娇贵的！✨',
+            '啊！{n}的尾巴！🙀', '你完了！{n}记仇的！📝',
+            '{n}不是玩具！哼！', '痒痒～哈哈别挠！😹',
+            '好啦好啦～摸一下而已嘛', '喵喵喵！投降！🏳️',
+        ];
         const fallbackMessages = [
             'HI! {n}来啦~', '{n}说：坐直啦！', '{n}：drink water~',
             '{n}：别喝Monster！', '{n}加油鸭～🦆', '{n}：摸鱼吗？🐟',
             '{n}：该休息了～', '{n} says Meow! 🐱', '{n}：别驼背！'
         ];
 
-        function fillNick(msg) {
-            return msg.replace(/\{n\}/g, pickNick());
+        // ── Animation ──
+        const petEl = document.getElementById('pet');
+        const anims = ['bounce', 'shake', 'wiggle'];
+        function playAnim() {
+            const a = pick(anims);
+            petEl.classList.remove(...anims);
+            void petEl.offsetWidth;
+            petEl.classList.add(a);
+            setTimeout(() => petEl.classList.remove(a), 700);
         }
 
-        function createPixelBubbleSVG(text) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.font = 'bold 13px monospace';
-            const textWidth = ctx.measureText(text).width;
-            const boxWidth = Math.max(textWidth + 20, 50);
-            const boxHeight = 32;
-            const svgWidth = boxWidth + 6;
-            const totalHeight = boxHeight + 14;
+        // ── DOM refs ──
+        const bubbleEl = document.getElementById('bubble');
+        const chatWrapper = document.getElementById('chatWrapper');
+        const chatInput = document.getElementById('chatInput');
 
-            return `<svg width="${svgWidth}" height="${totalHeight}" viewBox="0 0 ${svgWidth} ${totalHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-                <rect x="3" y="3" width="${boxWidth}" height="${boxHeight}" fill="white"/>
-                <rect x="3" y="0" width="${boxWidth}" height="3" fill="black"/>
-                <rect x="3" y="${boxHeight + 3}" width="${boxWidth}" height="3" fill="black"/>
-                <rect x="0" y="3" width="3" height="${boxHeight}" fill="black"/>
-                <rect x="${boxWidth + 3}" y="3" width="3" height="${boxHeight}" fill="black"/>
-                <rect x="0" y="${boxHeight + 3}" width="3" height="3" fill="black"/>
-                <rect x="-3" y="${boxHeight}" width="3" height="3" fill="black"/>
-                <rect x="-6" y="${boxHeight - 3}" width="3" height="3" fill="black"/>
-                <rect x="-3" y="${boxHeight - 3}" width="3" height="3" fill="white"/>
-                <rect x="0" y="${boxHeight}" width="3" height="3" fill="white"/>
-                <text x="${svgWidth / 2}" y="${boxHeight / 2 + 8}" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="black">${text}</text>
-            </svg>`;
-        }
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // MESSAGE SCHEDULER — priority-based channels
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const scheduler = {
+            channel: null,
+            timers: {},
+            modules: [],
 
-        function showBubble(text) {
-            const wrapper = document.getElementById('bubble');
-            const svg = document.getElementById('bubbleSvg');
-            svg.outerHTML = createPixelBubbleSVG(text);
-            wrapper.classList.add('show');
-            clearTimeout(window._bubbleTimeout);
-            window._bubbleTimeout = setTimeout(() => {
-                wrapper.classList.remove('show');
-            }, 120000);
-        }
+            clearTimers() {
+                Object.values(this.timers).forEach(clearTimeout);
+                this.timers = {};
+            },
 
-        document.getElementById('pet').addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            const msg = fillNick(clickMessages[Math.floor(Math.random() * clickMessages.length)]);
-            showBubble(msg);
+            show(text) {
+                bubbleEl.innerHTML = `<div class="pixel-bubble">${escapeHtml(text)}</div>`;
+                bubbleEl.classList.add('show');
+            },
+
+            hide() {
+                bubbleEl.classList.remove('show');
+                this.channel = null;
+            },
+
+            // ── Channel: Touch (highest priority) ──
+            onTouch(text) {
+                this.clearTimers();
+                this.channel = 'touch';
+                this.show(text);
+                this.timers.touchIdle = setTimeout(() => {
+                    this.timers.hide = setTimeout(() => {
+                        this.hide();
+                        this.timers.next = setTimeout(() => this.nextIdle(), 300000);
+                    }, 120000);
+                }, 5000);
+            },
+
+            // ── Channel: Chat (user-initiated) ──
+            onChat(text) {
+                this.clearTimers();
+                this.channel = 'chat';
+                this.show(text);
+                this.timers.hide = setTimeout(() => {
+                    this.hide();
+                    this.timers.next = setTimeout(() => this.nextIdle(), 300000);
+                }, 120000);
+            },
+
+            // ── Channel: Activity (AI auto-generated) ──
+            onActivity(text) {
+                this.clearTimers();
+                this.channel = 'activity';
+                this.show(text);
+                this.timers.hide = setTimeout(() => {
+                    this.hide();
+                    this.timers.next = setTimeout(() => this.nextIdle(), 300000);
+                }, 120000);
+            },
+
+            // ── Channel: Module ──
+            onModule(text) {
+                this.clearTimers();
+                this.channel = 'module';
+                this.show(text);
+                this.timers.hide = setTimeout(() => {
+                    this.hide();
+                    this.timers.next = setTimeout(() => this.nextIdle(), 300000);
+                }, 120000);
+            },
+
+            // ── Idle cycle brain ──
+            async nextIdle() {
+                if (this.channel === 'touch' || this.channel === 'chat') return;
+
+                const mod = this.getNextDueModule();
+                if (mod) {
+                    try {
+                        const msg = await mod.getMessage();
+                        mod.lastRun = Date.now();
+                        try { localStorage.setItem('mod_' + mod.id, String(mod.lastRun)); } catch(e) {}
+                        this.onModule(msg);
+                        return;
+                    } catch(e) { /* fall through to activity */ }
+                }
+                await this.runActivity();
+            },
+
+            async runActivity() {
+                try {
+                    const config = await invoke('get_config');
+                    let context = 'User is at their computer';
+                    if (config.activity_enabled) {
+                        try { context = await invoke('get_active_window'); } catch(e) {}
+                    }
+                    const message = await invoke('generate_message', { context });
+                    this.onActivity(message);
+                } catch(e) {
+                    this.onActivity(fillNick(pick(fallbackMessages)));
+                }
+            },
+
+            // ── Module registry ──
+            registerModule(config) {
+                const saved = parseInt(localStorage.getItem('mod_' + config.id)) || 0;
+                config.lastRun = saved;
+                this.modules.push(config);
+            },
+
+            getNextDueModule() {
+                const now = Date.now();
+                for (const m of this.modules) {
+                    let interval;
+                    if (m.frequency === 'daily') interval = 86400000;
+                    else if (m.frequency === 'hourly') interval = 3600000;
+                    else interval = (m.intervalMinutes || 30) * 60000;
+                    if (now - (m.lastRun || 0) >= interval) return m;
+                }
+                return null;
+            },
+
+            // ── Boot ──
+            start() {
+                this.onActivity(fillNick(pick(fallbackMessages)));
+            }
+        };
+
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // REGISTER MODULES
+        // ━━━━━━━━━━━━━━━━━━━━━━
+
+        // Placeholder weather module (daily)
+        scheduler.registerModule({
+            id: 'weather',
+            frequency: 'daily',
+            getMessage: async () => {
+                // TODO: replace with real weather API
+                const tips = [
+                    '{n}：今天记得带伞哦！🌧️',
+                    '{n}：外面好热，多喝水！☀️',
+                    '{n}：今天天气不错，出去走走？🌤️',
+                    '{n}：好冷！多穿点～🧥',
+                ];
+                return fillNick(pick(tips));
+            }
         });
 
-        async function generateAIMessage() {
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // TOUCH HANDLERS
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        let clickTimer = null;
+
+        petEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playAnim();
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                scheduler.onTouch(pick(tapMessages));
+            }, 250);
+        });
+
+        petEl.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            clearTimeout(clickTimer);
+            playAnim();
+            scheduler.onTouch(fillNick(pick(pokeMessages)));
+        });
+
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // CHAT (Ctrl+Cmd+C)
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        function openChat() {
+            chatWrapper.classList.add('show');
+            chatInput.value = '';
+            setTimeout(() => chatInput.focus(), 50);
+        }
+        function closeChat() {
+            chatWrapper.classList.remove('show');
+            chatInput.blur();
+        }
+
+        if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.transformCallback) {
+            window.__TAURI_INTERNALS__.invoke('plugin:event|listen', {
+                event: 'open-chat',
+                target: { kind: 'Any' },
+                handler: window.__TAURI_INTERNALS__.transformCallback(() => openChat())
+            });
+        }
+
+        async function submitChat() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            closeChat();
+            scheduler.onChat('thinking~🤔');
             try {
-                const config = await invoke('get_config');
-                let context = 'User is at their computer';
-                if (config.activity_enabled) {
-                    try {
-                        context = await invoke('get_active_window');
-                    } catch (e) {
-                        context = 'Unknown activity';
-                    }
-                }
-                const message = await invoke('generate_message', { context });
-                showBubble(message);
-            } catch (e) {
-                const msg = fillNick(fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)]);
-                showBubble(msg);
+                const reply = await invoke('chat_message', { userText: text });
+                scheduler.onChat(reply || fillNick('{n}：...嗯？🤔'));
+            } catch(err) {
+                scheduler.onChat('Error: ' + String(err).slice(0, 60));
             }
         }
 
-        showBubble(fillNick(fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)]));
+        chatInput.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Escape') closeChat();
+        });
+        chatInput.addEventListener('keypress', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); submitChat(); }
+        });
+        chatInput.addEventListener('mousedown', (e) => e.stopPropagation());
+        chatInput.addEventListener('click', (e) => { e.stopPropagation(); chatInput.focus(); });
 
-        async function startLoop() {
-            try {
-                const config = await invoke('get_config');
-                const intervalMs = (config.interval_minutes || 5) * 60 * 1000;
-                setTimeout(generateAIMessage, 10000);
-                setInterval(generateAIMessage, intervalMs);
-            } catch (e) {
-                setInterval(() => {
-                    const msg = fillNick(fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)]);
-                    showBubble(msg);
-                }, 300000);
-            }
-        }
-
-        startLoop();
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // START
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        scheduler.start();
     </script>
 </body>
 </html>

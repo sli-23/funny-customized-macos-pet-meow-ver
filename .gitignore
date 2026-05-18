@@ -1,3 +1,6 @@
 src-tauri/target/
 node_modules/
 .DS_Store
+*.env
+*.secret
+config.json

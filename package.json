@@ -1,7 +1,7 @@
 {
-  "name": "karate-dog-pet",
+  "name": "claude-meow-pet",
   "version": "1.0.0",
-  "description": "A pixel art karate dog desktop pet",
+  "description": "A pixel art cat desktop pet powered by Claude",
   "scripts": {
     "tauri": "cargo tauri"
   }

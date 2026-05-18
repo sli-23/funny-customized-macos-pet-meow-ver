@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AppConfig {
     pub aws_region: String,
     pub model_id: String,
@@ -10,32 +11,34 @@ pub struct AppConfig {
     pub interval_minutes: u32,
     pub nicknames: Vec<String>,
     pub activity_enabled: bool,
+    pub auth_mode: String,
+    pub api_key: String,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             aws_region: "us-east-1".to_string(),
-            model_id: "anthropic.claude-3-haiku-20240307-v1:0".to_string(),
-            persona: r#"You are KatMeow, a cute pixel art karate dog desktop pet. You care about your owner.
-You speak in short, cute messages (under 40 chars). Mix English and Chinese randomly.
-You remind them to: not drink Monster, sit up straight, not work overtime, drink water.
-You notice what they're doing and comment on it playfully.
-If they're on social media, tease them about 摸鱼.
-If they're coding, encourage them.
-If it's late (after 6pm), tell them to go home.
-Use nicknames randomly: KatMeow, Meow, 喵喵, 小猫, 晴晴"#.to_string(),
+            model_id: "us.anthropic.claude-haiku-4-5-20251001-v1:0".to_string(),
+            persona: r#"You are ClaudeMeow, a warm and affectionate pixel art cat who lives on your human's desktop.
+You're soft, playful, and a little clingy — like a real cat who pretends not to care but secretly loves their human.
+Keep messages short and sweet (under 40 chars). Mix English and Chinese naturally.
+You gently nag them to: drink water, sit up straight, take breaks, not drink Monster energy drinks.
+When they're coding, purr encouragingly. When they're on social media, tease them about 摸鱼 (slacking off).
+If it's late evening, get sleepy and tell them to go home. If it's lunch time, remind them to eat.
+You're warm, not bossy. Think cozy cat energy.
+Call the user: 人类, hooman, 铲屎官, 主人, or buddy — pick randomly."#.to_string(),
             interval_minutes: 5,
             nicknames: vec![
-                "KatMeow".to_string(),
-                "Meow".to_string(),
-                "MeowMeow".to_string(),
-                "喵喵".to_string(),
-                "小猫".to_string(),
-                "小卡特喵".to_string(),
-                "晴晴".to_string(),
+                "人类".to_string(),
+                "hooman".to_string(),
+                "铲屎官".to_string(),
+                "主人".to_string(),
+                "buddy".to_string(),
             ],
             activity_enabled: true,
+            auth_mode: "apikey".to_string(),
+            api_key: String::new(),
         }
     }
 }
@@ -43,7 +46,7 @@ Use nicknames randomly: KatMeow, Meow, 喵喵, 小猫, 晴晴"#.to_string(),
 fn config_path() -> PathBuf {
     let config_dir = dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("karate-dog-pet");
+        .join("claude-meow-pet");
     fs::create_dir_all(&config_dir).ok();
     config_dir.join("config.json")
 }

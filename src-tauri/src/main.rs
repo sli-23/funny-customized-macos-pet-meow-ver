@@ -1,17 +1,19 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod activity;
-mod bedrock;
+mod ai;
 mod config;
+mod modules;
 
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Manager, WindowEvent,
+    Emitter, Manager, WindowEvent,
 };
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             let pet_window = app.get_webview_window("main").unwrap();
             let _ = pet_window.set_shadow(false);
@@ -27,13 +29,13 @@ fn main() {
 
             let menu = Menu::with_items(app, &[&show, &hide, &settings, &quit])?;
 
-            let icon = tauri::include_image!("icons/icon.png");
+            let icon = tauri::include_image!("icons/tray-iconTemplate@2x.png");
 
             TrayIconBuilder::new()
                 .icon(icon)
-                .icon_as_template(false)
+                .icon_as_template(true)
                 .menu(&menu)
-                .tooltip("ClaudeMeowPet")
+                .tooltip("ClaudeMeow")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => {
                         if let Some(w) = app.get_webview_window("main") {
@@ -59,6 +61,14 @@ fn main() {
                 })
                 .build(app)?;
 
+            let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SUPER), Code::KeyC);
+            let chat_window = app.get_webview_window("main").unwrap();
+            app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
+                let _ = chat_window.show();
+                let _ = chat_window.set_focus();
+                let _ = chat_window.emit("open-chat", ());
+            })?;
+
             if let Some(settings_window) = app.get_webview_window("settings") {
                 let sw = settings_window.clone();
                 settings_window.on_window_event(move |event| {
@@ -74,8 +84,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             config::get_config,
             config::set_config,
-            activity::get_active_window,
-            bedrock::generate_message,
+            modules::activity::get_active_window,
+            ai::periodic::generate_message,
+            ai::chat::chat_message,
+            ai::test_api,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

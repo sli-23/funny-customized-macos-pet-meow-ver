@@ -1,6 +1,6 @@
 [package]
 name = "claude-meow-pet"
-version = "2.0.0"
+version = "1.1.0"
 edition = "2021"
 
 [dependencies]
@@ -11,6 +11,10 @@ tokio = { version = "1", features = ["full"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-bedrockruntime = "1"
 dirs = "6"
+chrono = "0.4"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+urlencoding = "2"
+tauri-plugin-global-shortcut = "2"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
