@@ -53,13 +53,16 @@ fn config_path() -> PathBuf {
 
 pub fn load_config() -> AppConfig {
     let path = config_path();
+    let defaults = AppConfig::default();
     if path.exists() {
         let data = fs::read_to_string(&path).unwrap_or_default();
-        serde_json::from_str(&data).unwrap_or_default()
-    } else {
-        let config = AppConfig::default();
-        save_config(&config);
+        let mut config: AppConfig = serde_json::from_str(&data).unwrap_or_default();
+        // Always use latest persona from code — user keeps their own settings
+        config.persona = defaults.persona;
         config
+    } else {
+        save_config(&defaults);
+        defaults
     }
 }
 
