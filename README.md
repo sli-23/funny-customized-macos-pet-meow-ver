@@ -4,15 +4,12 @@
     <img src="assets/image_5_v11.png" alt="alt text" width="90%">
 </p>
 
-This is the fun version of ClaudeMeow. Hopefully she keeps you company during those boring hours at work.
+**ClaudeMeow** is the cat version of Claude cascot. It is a lightweight macOS desktop pet. Inspired by the original Claude mascot, ClaudeMeow reimagines the design with cat-like features and behaviors while preserving its recognizable charm. It quietly lives on your desktop, bringing a little personality, comfort, and chaos to your workspace.
 
 <p align="center">
     <img src="assets/image_3_v11.png" alt="alt text" width="40%">
     <img src="assets/image_4_v11.png" alt="alt text" width="55%">
 </p>
-
-
-I'm pretty sure someone will help me to add more texts latter ;D.
 
 
 ## V 1.2 Updates
