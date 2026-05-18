@@ -19,11 +19,15 @@ pub async fn send_to_bedrock(
     if !config.user_nickname.is_empty() {
         let persona = config.persona
             .lines()
-            .filter(|line| !line.contains("Call the user by nickname"))
+            .filter(|line| {
+                !line.contains("Call the user by nickname")
+                    && !line.contains("hooman")
+                    && !line.contains("铲屎官")
+            })
             .collect::<Vec<_>>()
             .join("\n");
         config.persona = format!(
-            "{}\nThe user's name is '{}'. ALWAYS call them '{}' and NOTHING else. Never use any other nickname or generic term.",
+            "{}\nThe user's name is '{}'. ALWAYS call them '{}' and NOTHING else. Never use any other name, nickname, or generic term like 人类/hooman/铲屎官/主人/buddy.",
             persona, config.user_nickname, config.user_nickname
         );
     }
