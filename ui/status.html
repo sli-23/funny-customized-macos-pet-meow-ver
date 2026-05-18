@@ -9,9 +9,6 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: #1a1a1a;
-            border-radius: 10px;
-            border: none;
-            box-shadow: none;
             overflow: hidden;
             image-rendering: pixelated;
             display: flex;
@@ -20,32 +17,22 @@
         }
         @keyframes cardIn { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
 
-        /* Title bar with macOS close button */
+        /* Title bar */
         .titlebar {
-            height: 32px;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
+            height: 52px;
             flex-shrink: 0;
-            position: relative;
-            cursor: grab;
-        }
-        .titlebar:active { cursor: grabbing; }
-        .traffic-close {
-            width: 12px; height: 12px;
-            border-radius: 50%;
-            background: #ff5f56;
-            box-shadow: inset 0 0 0 0.5px rgba(178,55,48,0.3);
-            cursor: default;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
         }
-        .traffic-close svg {
-            width: 8px; height: 8px; opacity: 0; transition: opacity 0.08s;
+        .titlebar h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8e4df;
+            letter-spacing: -0.2px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        .traffic-close svg path { stroke: rgba(0,0,0,0.45); }
-        .traffic-close:hover svg { opacity: 1; }
 
         /* Pixel scene */
         .scene {
@@ -130,11 +117,8 @@
 </head>
 <body>
     <div class="card">
-        <!-- macOS-style title bar -->
         <div class="titlebar" data-tauri-drag-region>
-            <div class="traffic-close" onclick="hideStatus()">
-                <svg viewBox="0 0 12 12"><path d="M3.5 3.5L8.5 8.5M8.5 3.5L3.5 8.5" stroke-width="1.1" stroke-linecap="round"/></svg>
-            </div>
+            <h1 data-tauri-drag-region>Meow Status</h1>
         </div>
 
         <!-- Pixel night scene -->

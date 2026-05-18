@@ -24,27 +24,29 @@
       },
       {
         "label": "settings",
-        "title": "ClaudeMeow - Settings",
+        "title": "",
         "url": "settings.html",
         "width": 640,
         "height": 780,
-        "resizable": false,
-        "decorations": false,
+        "resizable": true,
+        "decorations": true,
         "transparent": false,
         "visible": false,
-        "center": true
+        "center": true,
+        "titleBarStyle": "Overlay"
       },
       {
         "label": "status",
-        "title": "Meow Status",
+        "title": "",
         "url": "status.html",
         "width": 360,
         "height": 430,
-        "resizable": false,
-        "decorations": false,
+        "resizable": true,
+        "decorations": true,
         "transparent": false,
         "visible": false,
-        "center": true
+        "center": true,
+        "titleBarStyle": "Overlay"
       }
     ]
   }
