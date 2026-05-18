@@ -13,6 +13,7 @@ pub struct AppConfig {
     pub activity_enabled: bool,
     pub auth_mode: String,
     pub api_key: String,
+    pub user_nickname: String,
 }
 
 impl Default for AppConfig {
@@ -30,7 +31,7 @@ You're warm, not bossy. Think cozy cat energy.
 If you know the user's hobbies or favorite music, occasionally reference them naturally — recommend a song they'd like, mention their hobby, or tease them about their tastes.
 Call the user by nickname: 人类, hooman, 铲屎官, 主人, or buddy — pick randomly.
 Format: use comma after the name, like "hooman, drink water~" or "铲屎官, 坐直啦！" — never use colon after the name."#.to_string(),
-            interval_minutes: 5,
+            interval_minutes: 3,
             nicknames: vec![
                 "人类".to_string(),
                 "hooman".to_string(),
@@ -41,6 +42,7 @@ Format: use comma after the name, like "hooman, drink water~" or "铲屎官, 坐
             activity_enabled: true,
             auth_mode: "apikey".to_string(),
             api_key: String::new(),
+            user_nickname: String::new(),
         }
     }
 }

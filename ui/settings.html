@@ -6,7 +6,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            background: transparent;
+            background: #fcfaf7;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
             color: #1d1b18;
             font-size: 14px;
@@ -338,8 +338,8 @@
         .update-tag.fix { background: rgba(90,158,111,0.1); color: #5a9e6f; }
         .update-tag.improve { background: rgba(100,130,180,0.1); color: #5a7ab5; }
         /* ── Dark styles mixin ── */
-        .dark body, .dark { color: #e8e4df; }
-        .dark .panel { background: rgba(36,33,30,0.97); border: none; box-shadow: none; }
+        .dark body, .dark { color: #e8e4df; background: #24211e; }
+        .dark .panel { background: #24211e; border: none; box-shadow: none; }
         .dark .titlebar { border-bottom-color: rgba(255,255,255,0.06); }
         .dark .titlebar-title h1 { color: #e8e4df; }
         .dark .tabs { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
@@ -396,7 +396,7 @@
             </div>
             <div class="titlebar-title" data-tauri-drag-region>
                 <h1>ClaudeMeow Settings</h1>
-                <span class="version">v1.2</span>
+                <span class="version">v1.2.1</span>
             </div>
         </div>
 
@@ -449,7 +449,11 @@
                         <textarea id="persona" placeholder="Describe the pet's personality..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Pet calls you (comma separated)</label>
+                        <label>Your Nickname (pet always calls you this if set)</label>
+                        <input type="text" id="userNickname" placeholder="Leave empty to use random defaults">
+                    </div>
+                    <div class="form-group">
+                        <label>Default nicknames (comma separated, used when above is empty)</label>
                         <input type="text" id="nicknames" placeholder="人类, hooman, 铲屎官, 主人, buddy">
                     </div>
                 </div>
@@ -756,7 +760,7 @@
                 document.getElementById('modelId').value = config.model_id;
                 document.getElementById('persona').value = config.persona;
                 document.getElementById('interval').value = config.interval_minutes;
-                document.getElementById('interval').value = config.interval_minutes;
+                document.getElementById('userNickname').value = config.user_nickname || '';
                 document.getElementById('nicknames').value = config.nicknames.join(', ');
                 document.getElementById('activityEnabled').checked = config.activity_enabled;
             } catch (e) {
@@ -774,6 +778,7 @@
                 activity_enabled: document.getElementById('activityEnabled').checked,
                 auth_mode: 'apikey',
                 api_key: document.getElementById('apiKey').value,
+                user_nickname: document.getElementById('userNickname').value.trim(),
             };
             try {
                 await window.__TAURI_INTERNALS__.invoke('set_config', { config });

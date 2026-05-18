@@ -174,6 +174,7 @@
 
         // ── Helpers ──
         let nicknames = ['人类', 'hooman', '铲屎官', '主人', 'buddy'];
+        let userNickname = '';
         let secretMessages = [];
         const kaomojis = [
             '^ↀᴥↀ^', 'ฅ•ω•ฅ', '(ฅ\'ω\'ฅ)', '(=ↀωↀ=)', '=^∇^*=',
@@ -181,7 +182,10 @@
             '(＾• ω •＾)', 'ฅ(•ㅅ•❀)ฅ', '(=^ ◡ ^=)', '(=^･ω･^=)',
             '<(*ΦωΦ*)>', '(^˵◕ω◕˵^)', '~(=^‥^)/', 'ଲ(ⓛ ω ⓛ)ଲ',
         ];
-        function pickNick() { return nicknames[Math.floor(Math.random() * nicknames.length)]; }
+        function pickNick() {
+            if (userNickname) return userNickname;
+            return nicknames[Math.floor(Math.random() * nicknames.length)];
+        }
         function fillNick(msg) { return msg.replace(/\{n\}/g, pickNick()).replace(/\{k\}/g, pickKao()); }
         function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
         function pickKao() { return pick(kaomojis); }
@@ -300,7 +304,7 @@
                 this.timers.touchIdle = setTimeout(() => {
                     this.timers.hide = setTimeout(() => {
                         this.hide();
-                        this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 300000);
+                        this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
                     }, 40000);
                 }, 5000);
             },
@@ -312,8 +316,8 @@
                 this.show(text, { cls: 'chat-reply' });
                 this.timers.hide = setTimeout(() => {
                     this.hide();
-                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 300000);
-                }, 90000);
+                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
+                }, 60000);
             },
 
             // ── Channel: Activity (AI auto-generated) ──
@@ -323,8 +327,8 @@
                 this.show(text);
                 this.timers.hide = setTimeout(() => {
                     this.hide();
-                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 300000);
-                }, 90000);
+                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
+                }, 60000);
             },
 
             // ── Channel: Module ──
@@ -334,8 +338,8 @@
                 this.show(text);
                 this.timers.hide = setTimeout(() => {
                     this.hide();
-                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 300000);
-                }, 90000);
+                    this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
+                }, 60000);
             },
 
             // ── Idle cycle brain ──
@@ -400,9 +404,9 @@
             async start() {
                 try {
                     const config = await invoke('get_config');
-                    this.idleGapMs = (config.interval_minutes || 5) * 60 * 1000;
+                    this.idleGapMs = (config.interval_minutes || 3) * 60 * 1000;
                 } catch(e) {
-                    this.idleGapMs = 300000;
+                    this.idleGapMs = 180000;
                 }
                 // Show a quick greeting, then trigger first real activity message after 15s
                 this.onActivity(fillNick(pick(fallbackMessages)));
@@ -657,6 +661,15 @@
         // ━━━━━━━━━━━━━━━━━━━━━━
         (async () => {
             try {
+                const config = await invoke('get_config');
+                if (config.user_nickname) {
+                    userNickname = config.user_nickname;
+                }
+                if (config.nicknames && config.nicknames.length > 0) {
+                    nicknames = config.nicknames;
+                }
+            } catch(e) {}
+            try {
                 const meow = await invoke('get_meow_profile');
                 if (meow) {
                     if (meow.nicknames && meow.nicknames.length > 0) {
@@ -664,7 +677,6 @@
                     }
                     if (meow.secret_messages && meow.secret_messages.length > 0) {
                         secretMessages = meow.secret_messages;
-                        // Register secret messages as a module
                         scheduler.registerModule({
                             id: 'secret',
                             frequency: 'hourly',

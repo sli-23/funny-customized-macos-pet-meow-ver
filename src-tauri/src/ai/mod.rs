@@ -15,9 +15,21 @@ pub async fn send_to_bedrock(
     max_tokens: i32,
     temperature: f32,
 ) -> Result<String, String> {
+    let mut config = config.clone();
+    if !config.user_nickname.is_empty() {
+        let persona = config.persona
+            .lines()
+            .filter(|line| !line.contains("Call the user by nickname"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        config.persona = format!(
+            "{}\nThe user's name is '{}'. ALWAYS call them '{}' and NOTHING else. Never use any other nickname or generic term.",
+            persona, config.user_nickname, config.user_nickname
+        );
+    }
     match config.auth_mode.as_str() {
-        "apikey" => send_via_bearer(config, user_prompt, max_tokens, temperature).await,
-        _ => send_via_iam(config, user_prompt, max_tokens, temperature).await,
+        "apikey" => send_via_bearer(&config, user_prompt, max_tokens, temperature).await,
+        _ => send_via_iam(&config, user_prompt, max_tokens, temperature).await,
     }
 }
 
