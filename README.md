@@ -1,8 +1,19 @@
 # ClaudeMeow
 
+<p align="center">
+    <img src="assets/image_5_v11.png" alt="alt text" width="90%">
+</p>
+
 This is the fun version of ClaudeMeow. Hopefully she keeps you company during those boring hours at work.
 
+<p align="center">
+    <img src="assets/image_3_v11.png" alt="alt text" width="40%">
+    <img src="assets/image_4_v11.png" alt="alt text" width="55%">
+</p>
+
+
 I'm pretty sure someone will help me to add more texts latter ;D.
+
 
 ## V 1.2 Updates
 The major update in v1.2 is the addition of meow status. We want to keep improving the experience, making it even more fun to raise a desktop pet while pretending to work.
