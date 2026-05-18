@@ -1,24 +1,19 @@
 # ClaudeMeow v1.1
 
-A pixel art cat desktop pet powered by Amazon Bedrock.
+A pixel art Claude style cat desktop pet powered by Amazon Bedrock.
 
 ## Prerequisites
 
-- macOS
-- [Rust](https://rustup.rs/)
-- [Tauri CLI](https://tauri.app/): `cargo install tauri-cli`
-- An Amazon Bedrock API key (ABSK format)
+1. macOS
+2. Install Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+3. Install Tauri CLI: `cargo install tauri-cli`
 
 ## Run
 
 ```bash
+git clone https://github.com/sli-23/funny-customized-macos-pet-meow-ver.git
+cd funny-customized-macos-pet-meow-ver
 cargo tauri dev
 ```
 
-## Setup
-
-1. Launch the app — the cat appears on your desktop
-2. Right-click the tray icon → **Settings**
-3. Paste your Bedrock API key → click **Test**
-4. If successful, settings auto-save
-5. Press **Ctrl+Cmd+C** anywhere to chat with your pet
+---

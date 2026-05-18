@@ -24,10 +24,11 @@ fn main() {
 
             let show = MenuItem::with_id(app, "show", "Show Pet", true, None::<&str>)?;
             let hide = MenuItem::with_id(app, "hide", "Hide Pet", true, None::<&str>)?;
+            let status = MenuItem::with_id(app, "status", "Meow Status", true, None::<&str>)?;
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
-            let menu = Menu::with_items(app, &[&show, &hide, &settings, &quit])?;
+            let menu = Menu::with_items(app, &[&show, &hide, &status, &settings, &quit])?;
 
             let icon = tauri::include_image!("icons/tray-iconTemplate@2x.png");
 
@@ -46,6 +47,12 @@ fn main() {
                     "hide" => {
                         if let Some(w) = app.get_webview_window("main") {
                             let _ = w.hide();
+                        }
+                    }
+                    "status" => {
+                        if let Some(w) = app.get_webview_window("status") {
+                            let _ = w.show();
+                            let _ = w.set_focus();
                         }
                     }
                     "settings" => {
@@ -79,12 +86,34 @@ fn main() {
                 });
             }
 
+            if let Some(status_window) = app.get_webview_window("status") {
+                let stw = status_window.clone();
+                status_window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = stw.hide();
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             config::get_config,
             config::set_config,
             modules::activity::get_active_window,
+            modules::get_activity_context,
+            modules::get_all_context,
+            modules::user_profile::get_user_profile,
+            modules::user_profile::set_user_profile,
+            modules::user_profile::get_meow_profile,
+            modules::user_profile::import_meow_profile,
+            modules::status::get_pet_status,
+            modules::status::pet_touched,
+            modules::status::pet_chatted,
+            modules::status::pet_angry,
+            modules::status::pet_fed,
+            modules::status::pet_rested,
             ai::periodic::generate_message,
             ai::chat::chat_message,
             ai::test_api,

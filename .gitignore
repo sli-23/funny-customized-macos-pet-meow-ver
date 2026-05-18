@@ -3,4 +3,6 @@ node_modules/
 .DS_Store
 *.env
 *.secret
+*.meow
 config.json
+profiles/

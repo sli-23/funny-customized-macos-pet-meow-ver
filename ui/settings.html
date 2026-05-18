@@ -2,58 +2,114 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ClaudeMeow - Settings</title>
+    <title>ClaudeMeow</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Söhne', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-            background: #f5f0e8;
-            color: #2d2b28;
-            padding: 0;
+        html, body {
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            color: #1d1b18;
             font-size: 14px;
-            min-height: 100vh;
-        }
-        .header {
-            background: #ebe5db;
-            border-bottom: 1px solid #ddd5c8;
-            padding: 18px 28px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .header img {
-            width: 30px;
-            height: 30px;
-            image-rendering: pixelated;
-        }
-        .header h1 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2d2b28;
-            letter-spacing: -0.3px;
-        }
-        .header .version {
-            font-size: 11px;
-            color: #9b9386;
-            margin-left: auto;
-            font-weight: 500;
+            height: 100%;
+            overflow: hidden;
         }
 
-        /* Tab navigation */
+        /* Floating panel container */
+        .panel {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(252, 250, 247, 0.97);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+            border-radius: 12px;
+            border: none;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes panelIn {
+            from { opacity: 0; transform: scale(0.97) translateY(6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Custom title bar — pixel-matched to macOS */
+        .titlebar {
+            height: 38px;
+            position: relative;
+            flex-shrink: 0;
+            border-bottom: 0.5px solid rgba(0,0,0,0.06);
+            cursor: grab;
+        }
+        .titlebar:active { cursor: grabbing; }
+        .titlebar-title {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .titlebar-title h1 {
+            font-size: 13px;
+            font-weight: 500;
+            color: #3d3d3d;
+            letter-spacing: -0.1px;
+        }
+        .titlebar-title .version {
+            font-size: 10px;
+            color: #a09890;
+            font-weight: 500;
+        }
+        .traffic-lights {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 1;
+        }
+        .traffic-light {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .traffic-light.close { background: #ff5f56; box-shadow: inset 0 0 0 0.5px rgba(178,55,48,0.3); }
+        .traffic-light.minimize { background: #ffbd2e; box-shadow: inset 0 0 0 0.5px rgba(191,154,28,0.3); }
+        .traffic-light.maximize { background: #27c93f; box-shadow: inset 0 0 0 0.5px rgba(29,152,48,0.3); }
+        .traffic-light svg {
+            width: 10px; height: 10px;
+            opacity: 0;
+            transition: opacity 0.08s;
+        }
+        .traffic-light svg path { stroke: rgba(0,0,0,0.45); }
+        .traffic-lights:hover .traffic-light svg { opacity: 1; }
+        .traffic-light:active { filter: brightness(0.8); }
+
+        /* Tabs */
         .tabs {
             display: flex;
-            background: #ebe5db;
-            border-bottom: 1px solid #ddd5c8;
-            padding: 0 28px;
+            padding: 0 20px;
+            gap: 2px;
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.015);
+            border-bottom: 0.5px solid rgba(0,0,0,0.06);
         }
         .tab {
-            padding: 12px 20px;
+            padding: 10px 16px;
             font-size: 13px;
             font-weight: 600;
-            color: #9b9386;
+            color: #a09890;
             cursor: pointer;
             border-bottom: 2px solid transparent;
-            transition: color 0.15s, border-color 0.15s;
+            transition: all 0.15s;
             user-select: none;
         }
         .tab:hover { color: #6b6560; }
@@ -61,101 +117,99 @@
             color: #c25b28;
             border-bottom-color: #c25b28;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+
+        /* Scrollable content */
+        .tab-content { display: none; flex: 1; overflow-y: auto; }
+        .tab-content.active { display: flex; flex-direction: column; }
+        .tab-content::-webkit-scrollbar { width: 6px; }
+        .tab-content::-webkit-scrollbar-track { background: transparent; }
+        .tab-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+        .tab-content::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
         .content {
-            padding: 24px 28px;
+            padding: 20px;
+            flex: 1;
         }
         .section {
-            background: white;
-            border: 1px solid #e5ddd1;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
+            background: rgba(255,255,255,0.7);
+            border: 0.5px solid rgba(0,0,0,0.06);
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
         }
         .section-title {
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             color: #c25b28;
-            margin-bottom: 16px;
-            letter-spacing: -0.2px;
+            margin-bottom: 14px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
         .section-desc {
             font-size: 12px;
-            color: #9b9386;
-            margin-top: -10px;
-            margin-bottom: 16px;
+            color: #a09890;
+            margin-top: -8px;
+            margin-bottom: 14px;
             line-height: 1.5;
         }
-        .form-group {
-            margin-bottom: 14px;
-        }
+        .form-group { margin-bottom: 12px; }
         label {
             display: block;
             font-weight: 500;
-            margin-bottom: 6px;
-            color: #6b6560;
+            margin-bottom: 5px;
+            color: #7a756e;
             font-size: 12px;
             letter-spacing: 0.1px;
         }
         input, select, textarea {
             width: 100%;
-            padding: 9px 12px;
-            border: 1px solid #ddd5c8;
-            border-radius: 8px;
-            background: #faf8f5;
-            color: #2d2b28;
+            padding: 8px 10px;
+            border: 0.5px solid rgba(0,0,0,0.1);
+            border-radius: 7px;
+            background: rgba(255,255,255,0.6);
+            color: #1d1b18;
             font-size: 13px;
             font-family: 'SF Mono', 'Menlo', monospace;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.15s;
         }
-        textarea {
-            height: 100px;
-            resize: vertical;
-            line-height: 1.5;
-        }
+        textarea { height: 90px; resize: vertical; line-height: 1.5; }
         select { cursor: pointer; }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #c25b28;
-            box-shadow: 0 0 0 3px rgba(194,91,40,0.1);
+            border-color: rgba(194,91,40,0.5);
+            box-shadow: 0 0 0 3px rgba(194,91,40,0.08);
+            background: white;
         }
         input[type="range"] {
             -webkit-appearance: none;
-            height: 4px;
+            height: 3px;
             border-radius: 2px;
-            background: #e5ddd1;
+            background: rgba(0,0,0,0.08);
             border: none;
             padding: 0;
             margin-top: 8px;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 16px; height: 16px;
             border-radius: 50%;
             background: #c25b28;
             cursor: pointer;
             box-shadow: 0 1px 4px rgba(194,91,40,0.3);
         }
-        .row {
-            display: flex;
-            gap: 12px;
-        }
+        .row { display: flex; gap: 10px; }
         .row .form-group { flex: 1; }
         .toggle {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 0;
+            padding: 6px 0;
         }
         .toggle input[type="checkbox"] {
-            width: 38px;
-            height: 22px;
+            width: 34px; height: 20px;
             -webkit-appearance: none;
-            background: #ddd5c8;
-            border-radius: 11px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
             position: relative;
             cursor: pointer;
             transition: background 0.2s;
@@ -164,394 +218,507 @@
         .toggle input[type="checkbox"]::after {
             content: '';
             position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 16px;
-            height: 16px;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
             border-radius: 50%;
             background: white;
             transition: all 0.2s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
-        .toggle input[type="checkbox"]:checked {
-            background: #c25b28;
-        }
-        .toggle input[type="checkbox"]:checked::after {
-            left: 19px;
-            background: white;
-        }
-        .toggle label {
-            margin: 0;
-            cursor: pointer;
-            font-size: 13px;
-            color: #4a4641;
-        }
+        .toggle input[type="checkbox"]:checked { background: #c25b28; }
+        .toggle input[type="checkbox"]:checked::after { left: 16px; }
+        .toggle label { margin: 0; cursor: pointer; font-size: 13px; color: #4a4641; }
+
         .footer {
-            padding: 0 28px 24px;
+            padding: 14px 20px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            border-top: 0.5px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
         }
         .btn-primary {
             background: #c25b28;
             color: white;
             border: none;
-            padding: 10px 28px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 8px 22px;
+            border-radius: 7px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.15s, transform 0.1s;
-            letter-spacing: -0.2px;
+            transition: all 0.15s;
         }
-        .btn-primary:hover {
-            background: #a84e22;
-            transform: translateY(-1px);
-        }
-        .btn-primary:active {
-            transform: translateY(0);
-            background: #934520;
-        }
+        .btn-primary:hover { background: #a84e22; }
+        .btn-primary:active { background: #934520; transform: scale(0.98); }
         .btn-secondary {
-            padding: 9px 16px;
-            font-size: 12px;
-            background: #ebe5db;
+            padding: 8px 14px;
+            font-size: 11px;
+            background: rgba(0,0,0,0.04);
             color: #4a4641;
-            border: 1px solid #ddd5c8;
-            border-radius: 8px;
+            border: 0.5px solid rgba(0,0,0,0.08);
+            border-radius: 7px;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
-            transition: background 0.15s;
+            transition: all 0.15s;
         }
-        .btn-secondary:hover { background: #ddd5c8; }
-        .status {
-            font-size: 13px;
-            color: #5a9e6f;
-            min-height: 18px;
-            font-weight: 500;
-        }
-        .interval-display {
-            color: #c25b28;
-            font-weight: 600;
-        }
-        .test-status {
-            font-size: 12px;
-            margin-top: 6px;
-            min-height: 16px;
-        }
+        .btn-secondary:hover { background: rgba(0,0,0,0.08); }
+        .status { font-size: 12px; color: #5a9e6f; min-height: 16px; font-weight: 500; }
+        .interval-display { color: #c25b28; font-weight: 600; }
+        .test-status { font-size: 11px; margin-top: 5px; min-height: 14px; }
         .test-status.success { color: #5a9e6f; }
         .test-status.error { color: #c25b28; }
-        .test-status.loading { color: #9b9386; }
-        .shortcut-hint {
-            margin-top: 6px;
-            font-size: 11px;
-            color: #9b9386;
-        }
+        .test-status.loading { color: #a09890; }
+        .shortcut-hint { margin-top: 4px; font-size: 10px; color: #a09890; }
         .shortcut-hint kbd {
             display: inline-block;
-            padding: 1px 6px;
-            background: #ebe5db;
-            border: 1px solid #ddd5c8;
+            padding: 1px 5px;
+            background: rgba(0,0,0,0.04);
+            border: 0.5px solid rgba(0,0,0,0.08);
             border-radius: 4px;
             font-family: 'SF Mono', monospace;
-            font-size: 10px;
-            color: #6b6560;
+            font-size: 9px;
+            color: #7a756e;
         }
 
         /* Extension cards */
         .ext-card {
-            background: white;
-            border: 1px solid #e5ddd1;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 12px;
+            background: rgba(255,255,255,0.5);
+            border: 0.5px solid rgba(0,0,0,0.06);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            transition: background 0.15s;
         }
+        .ext-card:hover { background: rgba(255,255,255,0.8); }
         .ext-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 32px; height: 32px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             flex-shrink: 0;
         }
         .ext-info { flex: 1; }
-        .ext-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2d2b28;
-        }
-        .ext-desc {
-            font-size: 11px;
-            color: #9b9386;
-            margin-top: 2px;
-        }
+        .ext-name { font-size: 13px; font-weight: 600; color: #1d1b18; }
+        .ext-desc { font-size: 11px; color: #a09890; margin-top: 2px; }
         .ext-badge {
-            font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            white-space: nowrap;
+            font-size: 9px; padding: 3px 7px;
+            border-radius: 5px; font-weight: 600; white-space: nowrap;
         }
-        .ext-badge.active {
-            background: rgba(90,158,111,0.12);
-            color: #5a9e6f;
-        }
-        .ext-badge.coming {
-            background: rgba(155,147,134,0.12);
-            color: #9b9386;
-        }
-        .update-item {
-            padding: 14px 0;
-            border-bottom: 1px solid #ebe5db;
-        }
+        .ext-badge.active { background: rgba(90,158,111,0.1); color: #5a9e6f; }
+        .ext-badge.coming { background: rgba(0,0,0,0.04); color: #a09890; }
+
+        /* Update log */
+        .update-item { padding: 12px 0; border-bottom: 0.5px solid rgba(0,0,0,0.04); }
         .update-item:last-child { border-bottom: none; }
-        .update-version {
-            font-size: 14px;
-            font-weight: 700;
-            color: #c25b28;
-            margin-bottom: 4px;
-        }
-        .update-date {
-            font-size: 11px;
-            color: #9b9386;
-            margin-bottom: 10px;
-        }
-        .update-list {
-            list-style: none;
-            padding: 0;
-        }
+        .update-version { font-size: 13px; font-weight: 700; color: #c25b28; margin-bottom: 3px; }
+        .update-date { font-size: 10px; color: #a09890; margin-bottom: 8px; }
+        .update-list { list-style: none; padding: 0; }
         .update-list li {
-            font-size: 12px;
-            color: #4a4641;
-            padding: 3px 0 3px 18px;
-            position: relative;
-            line-height: 1.5;
+            font-size: 11px; color: #4a4641;
+            padding: 2px 0 2px 16px;
+            position: relative; line-height: 1.5;
         }
         .update-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 10px;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #c25b28;
+            content: ''; position: absolute; left: 0; top: 8px;
+            width: 5px; height: 5px; border-radius: 50%; background: #c25b28;
         }
         .update-tag {
-            display: inline-block;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-right: 4px;
-            vertical-align: middle;
+            display: inline-block; font-size: 8px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            padding: 1px 5px; border-radius: 3px;
+            margin-right: 3px; vertical-align: middle;
         }
-        .update-tag.new { background: rgba(194,91,40,0.12); color: #c25b28; }
-        .update-tag.fix { background: rgba(90,158,111,0.12); color: #5a9e6f; }
-        .update-tag.improve { background: rgba(100,130,180,0.12); color: #5a7ab5; }
+        .update-tag.new { background: rgba(194,91,40,0.1); color: #c25b28; }
+        .update-tag.fix { background: rgba(90,158,111,0.1); color: #5a9e6f; }
+        .update-tag.improve { background: rgba(100,130,180,0.1); color: #5a7ab5; }
+        /* ── Dark styles mixin ── */
+        .dark body, .dark { color: #e8e4df; }
+        .dark .panel { background: rgba(36,33,30,0.97); border: none; box-shadow: none; }
+        .dark .titlebar { border-bottom-color: rgba(255,255,255,0.06); }
+        .dark .titlebar-title h1 { color: #e8e4df; }
+        .dark .tabs { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
+        .dark .tab { color: #7a756e; }
+        .dark .tab:hover { color: #a09890; }
+        .dark .section { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+        .dark .section-desc { color: #7a756e; }
+        .dark label { color: #9b9386; }
+        .dark input, .dark select, .dark textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #e8e4df; }
+        .dark input:focus, .dark select:focus, .dark textarea:focus { border-color: rgba(194,91,40,0.6); box-shadow: 0 0 0 3px rgba(194,91,40,0.15); background: rgba(255,255,255,0.08); }
+        .dark input[type="range"] { background: rgba(255,255,255,0.08); }
+        .dark .toggle input[type="checkbox"] { background: rgba(255,255,255,0.1); }
+        .dark .toggle label { color: #a09890; }
+        .dark .btn-secondary { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #a09890; }
+        .dark .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .dark .footer { border-top-color: rgba(255,255,255,0.06); }
+        .dark .shortcut-hint { color: #7a756e; }
+        .dark .shortcut-hint kbd { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #9b9386; }
+        .dark .ext-card { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+        .dark .ext-card:hover { background: rgba(255,255,255,0.06); }
+        .dark .ext-name { color: #e8e4df; }
+        .dark .ext-desc { color: #7a756e; }
+        .dark .ext-badge.active { background: rgba(90,158,111,0.15); }
+        .dark .ext-badge.coming { background: rgba(255,255,255,0.05); }
+        .dark .update-item { border-bottom-color: rgba(255,255,255,0.04); }
+        .dark .update-list li { color: #a09890; }
+        .dark .tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+        .dark .tab-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        .dark .tab.active { color: #e07040; border-bottom-color: #e07040; }
+        .dark .btn-primary { background: #e07040; }
+        .dark .btn-primary:hover { background: #c25b28; }
+        .dark .status { color: #6bc48a; }
+        .dark .interval-display { color: #e07040; }
+        .dark .section-title { color: #e07040; }
+        .dark .update-version { color: #e07040; }
+        .dark .test-status.success { color: #6bc48a; }
+        .dark .test-status.error { color: #e07040; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="assets/claude_meow.gif" alt="ClaudeMeow">
-        <h1>ClaudeMeow</h1>
-        <span class="version">v1.1</span>
-    </div>
-
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('general')">General</div>
-        <div class="tab" onclick="switchTab('extensions')">Extensions</div>
-        <div class="tab" onclick="switchTab('updates')">Updates</div>
-    </div>
-
-    <!-- GENERAL TAB -->
-    <div class="tab-content active" id="tab-general">
-        <div class="content">
-            <div class="section">
-                <div class="section-title">API Connection</div>
-                <div class="form-group">
-                    <label>Bedrock API Key</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="password" id="apiKey" placeholder="ABSK..." style="flex:1;">
-                        <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
-                    </div>
-                    <div class="test-status" id="testStatus"></div>
+    <div class="panel">
+        <!-- Custom title bar -->
+        <div class="titlebar" data-tauri-drag-region>
+            <div class="traffic-lights">
+                <div class="traffic-light close" onclick="hideWindow()">
+                    <svg viewBox="0 0 12 12"><path d="M3.5 3.5L8.5 8.5M8.5 3.5L3.5 8.5" stroke-width="1.1" stroke-linecap="round"/></svg>
                 </div>
-                <div class="row">
+                <div class="traffic-light minimize" onclick="minimizeWindow()">
+                    <svg viewBox="0 0 12 12"><path d="M3 6H9" stroke-width="1.1" stroke-linecap="round"/></svg>
+                </div>
+                <div class="traffic-light maximize" onclick="maximizeWindow()">
+                    <svg viewBox="0 0 12 12"><path d="M3 8.5L3.5 3.5L8.5 3M8.5 9L5 5.5" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                </div>
+            </div>
+            <div class="titlebar-title" data-tauri-drag-region>
+                <h1>ClaudeMeow Settings</h1>
+                <span class="version">v1.2</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('general', this)">General</div>
+            <div class="tab" onclick="switchTab('extensions', this)">Extensions</div>
+            <div class="tab" onclick="switchTab('updates', this)">Updates</div>
+        </div>
+
+        <!-- GENERAL -->
+        <div class="tab-content active" id="tab-general">
+            <div class="content">
+                <div class="section">
+                    <div class="section-title">API Connection</div>
                     <div class="form-group">
-                        <label>AWS Region</label>
-                        <select id="region">
-                            <option value="us-west-2">us-west-2</option>
-                            <option value="us-east-1">us-east-1</option>
-                            <option value="eu-west-1">eu-west-1</option>
-                            <option value="ap-northeast-1">ap-northeast-1</option>
-                            <option value="ap-southeast-1">ap-southeast-1</option>
+                        <label>Bedrock API Key</label>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input type="password" id="apiKey" placeholder="ABSK..." style="flex:1;">
+                            <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
+                        </div>
+                        <div class="test-status" id="testStatus"></div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>AWS Region</label>
+                            <select id="region">
+                                <option value="us-west-2">us-west-2</option>
+                                <option value="us-east-1">us-east-1</option>
+                                <option value="eu-west-1">eu-west-1</option>
+                                <option value="ap-northeast-1">ap-northeast-1</option>
+                                <option value="ap-southeast-1">ap-southeast-1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Model</label>
+                            <select id="modelId">
+                                <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast, default)</option>
+                                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
+                                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Personality</div>
+                    <div class="form-group">
+                        <label>Persona Prompt</label>
+                        <textarea id="persona" placeholder="Describe the pet's personality..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Pet calls you (comma separated)</label>
+                        <input type="text" id="nicknames" placeholder="人类, hooman, 铲屎官, 主人, buddy">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">About You (optional)</div>
+                    <div class="section-desc">Tell ClaudeMeow about yourself so it can personalize messages. Share this file with friends so their pet knows them too!</div>
+                    <div class="form-group">
+                        <textarea id="userProfile" placeholder="My hobbies: gaming, cooking&#10;Favorite music: indie, jazz&#10;I like cats and coffee&#10;My name is..." style="height:80px;"></textarea>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Appearance</div>
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <select id="themeMode" onchange="applyTheme()">
+                            <option value="system">System (follow macOS)</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Model</label>
-                        <select id="modelId">
-                            <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast, default)</option>
-                            <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
-                            <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
-                        </select>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">More Settings</div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Message Interval</label>
+                            <select id="interval">
+                                <option value="1">1 min</option>
+                                <option value="2">2 min</option>
+                                <option value="3">3 min</option>
+                                <option value="5" selected>5 min</option>
+                                <option value="10">10 min</option>
+                                <option value="15">15 min</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Bubble Display</label>
+                            <select id="bubbleDisplay">
+                                <option value="30">30 sec</option>
+                                <option value="60" selected>1 min</option>
+                                <option value="120">2 min</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="activityEnabled" checked>
+                        <label for="activityEnabled">Read active window title for context</label>
+                    </div>
+                    <div class="shortcut-hint">
+                        Press <kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd> anywhere to chat with your pet
                     </div>
                 </div>
             </div>
 
-            <div class="section">
-                <div class="section-title">Personality</div>
-                <div class="form-group">
-                    <label>Persona Prompt</label>
-                    <textarea id="persona" placeholder="Describe the pet's personality..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Pet calls you (comma separated)</label>
-                    <input type="text" id="nicknames" placeholder="人类, hooman, 铲屎官, 主人, buddy">
-                </div>
+            <div class="footer">
+                <button onclick="saveSettings()" class="btn-primary">Save Settings</button>
+                <div class="status" id="status"></div>
             </div>
+        </div>
 
-            <div class="section">
-                <div class="section-title">Behavior</div>
-                <div class="form-group">
-                    <label>Message Interval: <span class="interval-display" id="intervalDisplay">5 min</span></label>
-                    <input type="range" id="interval" min="1" max="10" value="5">
-                </div>
-                <div class="toggle">
-                    <input type="checkbox" id="activityEnabled" checked>
-                    <label for="activityEnabled">Read active window title for context</label>
-                </div>
-                <div class="shortcut-hint">
-                    Press <kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd> anywhere to chat with your pet
+        <!-- EXTENSIONS -->
+        <div class="tab-content" id="tab-extensions">
+            <div class="content">
+                <div class="section">
+                    <div class="section-title">Modules</div>
+                    <div class="section-desc">Extend what ClaudeMeow can do. Each module adds new context so the AI gives smarter messages.</div>
+
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">👁</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Activity Monitor</div>
+                            <div class="ext-desc">Reads your active window to know if you're coding, browsing, or slacking off.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">⏰</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Time Awareness</div>
+                            <div class="ext-desc">Knows the time of day. Reminds you to eat lunch, go home, or sleep.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🌤</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Weather</div>
+                            <div class="ext-desc">Fetches Seattle weather daily and tells you to bring an umbrella or wear sunscreen.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🎵</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Now Playing</div>
+                            <div class="ext-desc">Reads Spotify and comments on your music taste.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🔋</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Battery Alert</div>
+                            <div class="ext-desc">Warns you when battery drops below 20%.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">👤</div>
+                        <div class="ext-info">
+                            <div class="ext-name">User Profile</div>
+                            <div class="ext-desc">Share your hobbies and tastes so the pet knows you better.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">💪</div>
+                        <div class="ext-info">
+                            <div class="ext-name">励志句子</div>
+                            <div class="ext-desc">Every couple hours, shares an inspirational quote from hitokoto.cn.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">📹</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Zoom Meeting</div>
+                            <div class="ext-desc">Detects when you're in a Zoom meeting and stays quiet or cheers you on.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🖥</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Performance Monitor</div>
+                            <div class="ext-desc">Warns when CPU/RAM exceeds 80% or laptop is thermal throttling.</div>
+                        </div>
+                        <span class="ext-badge active">Active</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(0,0,0,0.03);">🧍</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Stand Up Reminders</div>
+                            <div class="ext-desc">Tracks how long you've been sitting and nudges you to stretch.</div>
+                        </div>
+                        <span class="ext-badge coming">Coming soon</span>
+                    </div>
+                    <div class="ext-card">
+                        <div class="ext-icon" style="background: rgba(0,0,0,0.03);">📅</div>
+                        <div class="ext-info">
+                            <div class="ext-name">Calendar</div>
+                            <div class="ext-desc">Connects to your calendar and warns you before meetings start.</div>
+                        </div>
+                        <span class="ext-badge coming">Coming soon</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="footer">
-            <button onclick="saveSettings()" class="btn-primary">Save Settings</button>
-            <div class="status" id="status"></div>
-        </div>
-    </div>
-
-    <!-- EXTENSIONS TAB -->
-    <div class="tab-content" id="tab-extensions">
-        <div class="content">
-            <div class="section">
-                <div class="section-title">Modules</div>
-                <div class="section-desc">Extend what ClaudeMeow can do. Each module adds new context to the AI so it can give smarter, more relevant messages.</div>
-
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(194,91,40,0.1);">👁</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Activity Monitor</div>
-                        <div class="ext-desc">Reads your active window to know if you're coding, browsing, or slacking off.</div>
+        <!-- UPDATES -->
+        <div class="tab-content" id="tab-updates">
+            <div class="content">
+                <div class="section">
+                    <div class="section-title">What's New</div>
+                    <div class="update-item">
+                        <div class="update-version">v1.2</div>
+                        <div class="update-date">May 2026</div>
+                        <ul class="update-list">
+                            <li><span class="update-tag new">New</span> Weather module — real Seattle weather daily</li>
+                            <li><span class="update-tag new">New</span> Spotify — comments on your music taste</li>
+                            <li><span class="update-tag new">New</span> Battery alert — warns when below 20%</li>
+                            <li><span class="update-tag new">New</span> Performance monitor — CPU/RAM overload warnings</li>
+                            <li><span class="update-tag new">New</span> Zoom meeting detection</li>
+                            <li><span class="update-tag new">New</span> 励志句子 — inspirational quotes (Chinese + English)</li>
+                            <li><span class="update-tag new">New</span> Typing detection — pet notices when you're typing</li>
+                            <li><span class="update-tag new">New</span> Time greetings — morning, lunch, evening, late night reminders</li>
+                            <li><span class="update-tag new">New</span> User Profile — tell the pet your hobbies and tastes</li>
+                            <li><span class="update-tag new">New</span> Pet recommends things based on your interests</li>
+                            <li><span class="update-tag new">New</span> Cat kaomojis in messages (=^･ω･^=)</li>
+                            <li><span class="update-tag new">New</span> Meow Status — Tamagotchi stats (Happiness, Energy, Love)</li>
+                            <li><span class="update-tag new">New</span> Rage mode — tap 5x fast and the pet gets angry!</li>
+                            <li><span class="update-tag new">New</span> Chat knows weather — ask about weather and get real answers</li>
+                            <li><span class="update-tag new">New</span> Dark mode support (system / light / dark)</li>
+                            <li><span class="update-tag improve">Improve</span> Custom floating settings panel (Raycast/Arc style)</li>
+                            <li><span class="update-tag improve">Improve</span> macOS traffic light buttons</li>
+                            <li><span class="update-tag improve">Improve</span> Only pet is draggable — bubble won't block your windows</li>
+                            <li><span class="update-tag improve">Improve</span> Chat reply bubble uses Claude terracotta color</li>
+                            <li><span class="update-tag improve">Improve</span> Bubble pop animation on touch</li>
+                            <li><span class="update-tag fix">Fix</span> Idle gap respects settings interval (no more message spam)</li>
+                            <li><span class="update-tag fix">Fix</span> Late night reminder only fires once per night</li>
+                        </ul>
                     </div>
-                    <span class="ext-badge active">Active</span>
-                </div>
 
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(194,91,40,0.1);">⏰</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Time Awareness</div>
-                        <div class="ext-desc">Knows the time of day. Reminds you to eat lunch, go home, or sleep.</div>
+                    <div class="update-item">
+                        <div class="update-version">v1.1</div>
+                        <div class="update-date">May 2026</div>
+                        <ul class="update-list">
+                            <li><span class="update-tag new">New</span> Bedrock API Key auth with test button</li>
+                            <li><span class="update-tag new">New</span> Chat mode — press <b>Ctrl+Cmd+C</b> to talk to your pet</li>
+                            <li><span class="update-tag new">New</span> Touch reactions — tap for cute sounds, poke for dramatic reactions</li>
+                            <li><span class="update-tag new">New</span> Activity detection — pet knows if you're coding or slacking</li>
+                            <li><span class="update-tag new">New</span> Priority message scheduler (touch > chat > activity > modules)</li>
+                            <li><span class="update-tag new">New</span> Module system for extensible features</li>
+                            <li><span class="update-tag new">New</span> Claude-styled settings with tabs (General / Extensions / Updates)</li>
+                            <li><span class="update-tag improve">Improve</span> Adaptive tray icon for dark/light mode</li>
+                            <li><span class="update-tag improve">Improve</span> App icon — Claude terracotta + white cat</li>
+                            <li><span class="update-tag improve">Improve</span> Dynamic speech bubbles with word wrap</li>
+                            <li><span class="update-tag fix">Fix</span> Local timezone support</li>
+                            <li><span class="update-tag fix">Fix</span> Config persistence across restarts</li>
+                        </ul>
                     </div>
-                    <span class="ext-badge active">Active</span>
-                </div>
 
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(155,147,134,0.08);">🌤</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Weather</div>
-                        <div class="ext-desc">Fetches local weather and tells you to bring an umbrella or wear sunscreen.</div>
+                    <div class="update-item">
+                        <div class="update-version">v1.0</div>
+                        <div class="update-date">Initial Release</div>
+                        <ul class="update-list">
+                            <li>Desktop pet with pixel art cat sprite</li>
+                            <li>Periodic AI messages via Amazon Bedrock</li>
+                            <li>System tray with show/hide/settings/quit</li>
+                            <li>Configurable persona, nicknames, and interval</li>
+                        </ul>
                     </div>
-                    <span class="ext-badge coming">Coming soon</span>
-                </div>
-
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(155,147,134,0.08);">🧍</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Stand Up Reminders</div>
-                        <div class="ext-desc">Tracks how long you've been sitting and nudges you to stretch or walk.</div>
-                    </div>
-                    <span class="ext-badge coming">Coming soon</span>
-                </div>
-
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(155,147,134,0.08);">📅</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Calendar</div>
-                        <div class="ext-desc">Connects to your calendar and warns you before meetings start.</div>
-                    </div>
-                    <span class="ext-badge coming">Coming soon</span>
-                </div>
-
-                <div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(155,147,134,0.08);">🎵</div>
-                    <div class="ext-info">
-                        <div class="ext-name">Now Playing</div>
-                        <div class="ext-desc">Knows what music you're listening to and comments on your taste.</div>
-                    </div>
-                    <span class="ext-badge coming">Coming soon</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- UPDATES TAB -->
-    <div class="tab-content" id="tab-updates">
-        <div class="content">
-            <div class="section">
-                <div class="section-title">What's New</div>
-
-                <div class="update-item">
-                    <div class="update-version">v1.1</div>
-                    <div class="update-date">May 2026</div>
-                    <ul class="update-list">
-                        <li><span class="update-tag new">New</span> Bedrock API Key auth — connect with ABSK bearer tokens</li>
-                        <li><span class="update-tag new">New</span> Chat mode — press <b>Ctrl+Cmd+C</b> to talk to your pet</li>
-                        <li><span class="update-tag new">New</span> Touch reactions — click for cute sounds, double-click for dramatic reactions</li>
-                        <li><span class="update-tag new">New</span> Activity detection — pet knows if you're coding, browsing, or slacking</li>
-                        <li><span class="update-tag new">New</span> Message scheduler — 4 priority channels (touch, chat, activity, modules)</li>
-                        <li><span class="update-tag new">New</span> Module system — extensible architecture for weather, reminders, and more</li>
-                        <li><span class="update-tag new">New</span> API test button — verify your Bedrock key before saving</li>
-                        <li><span class="update-tag new">New</span> Claude-styled settings with General / Extensions / Updates tabs</li>
-                        <li><span class="update-tag improve">Improve</span> Adaptive tray icon — auto dark/light mode</li>
-                        <li><span class="update-tag improve">Improve</span> App icon — Claude terracotta + white cat design</li>
-                        <li><span class="update-tag improve">Improve</span> Dynamic speech bubbles — wraps long text, supports Chinese</li>
-                        <li><span class="update-tag improve">Improve</span> Pixel bubble tail points left toward pet</li>
-                        <li><span class="update-tag fix">Fix</span> Local timezone — uses actual local time instead of UTC</li>
-                        <li><span class="update-tag fix">Fix</span> Config persistence — settings survive restarts</li>
-                    </ul>
-                </div>
-
-                <div class="update-item">
-                    <div class="update-version">v1.0</div>
-                    <div class="update-date">Initial Release</div>
-                    <ul class="update-list">
-                        <li>Desktop pet with pixel art cat sprite</li>
-                        <li>Periodic AI messages via Amazon Bedrock</li>
-                        <li>System tray with show/hide/settings/quit</li>
-                        <li>Configurable persona, nicknames, and interval</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function switchTab(name) {
+        function applyTheme(mode) {
+            if (!mode) mode = document.getElementById('themeMode').value;
+            localStorage.setItem('claudemeow_theme', mode);
+            const html = document.documentElement;
+            html.classList.remove('dark');
+            if (mode === 'dark') {
+                html.classList.add('dark');
+            } else if (mode === 'system') {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    html.classList.add('dark');
+                }
+            }
+        }
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const mode = localStorage.getItem('claudemeow_theme') || 'dark';
+            if (mode === 'system') applyTheme('system');
+        });
+
+        // Load saved theme on startup
+        applyTheme(localStorage.getItem('claudemeow_theme') || 'dark');
+
+        function hideWindow() {
+            window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'settings' });
+        }
+        function minimizeWindow() {
+            window.__TAURI_INTERNALS__.invoke('plugin:window|minimize', { label: 'settings' });
+        }
+        function maximizeWindow() {
+            window.__TAURI_INTERNALS__.invoke('plugin:window|toggle_maximize', { label: 'settings' });
+        }
+
+        function switchTab(name, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.tab-content#tab-${name}`).classList.add('active');
-            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            el.classList.add('active');
         }
 
         async function testApi() {
@@ -560,10 +727,8 @@
             const apiKey = document.getElementById('apiKey').value.trim();
             const region = document.getElementById('region').value;
             const modelId = document.getElementById('modelId').value.trim();
-
             if (!apiKey) { status.textContent = 'Enter an API key first'; status.className = 'test-status error'; return; }
             if (!modelId) { status.textContent = 'Enter a model ID first'; status.className = 'test-status error'; return; }
-
             status.textContent = 'Testing...'; status.className = 'test-status loading';
             btn.disabled = true;
             try {
@@ -579,6 +744,11 @@
         }
 
         async function loadSettings() {
+            document.getElementById('themeMode').value = localStorage.getItem('claudemeow_theme') || 'dark';
+            try {
+                const profile = await window.__TAURI_INTERNALS__.invoke('get_user_profile');
+                document.getElementById('userProfile').value = profile || '';
+            } catch(e) {}
             try {
                 const config = await window.__TAURI_INTERNALS__.invoke('get_config');
                 document.getElementById('region').value = config.aws_region;
@@ -586,7 +756,7 @@
                 document.getElementById('modelId').value = config.model_id;
                 document.getElementById('persona').value = config.persona;
                 document.getElementById('interval').value = config.interval_minutes;
-                document.getElementById('intervalDisplay').textContent = config.interval_minutes + ' min';
+                document.getElementById('interval').value = config.interval_minutes;
                 document.getElementById('nicknames').value = config.nicknames.join(', ');
                 document.getElementById('activityEnabled').checked = config.activity_enabled;
             } catch (e) {
@@ -607,6 +777,8 @@
             };
             try {
                 await window.__TAURI_INTERNALS__.invoke('set_config', { config });
+                const profileContent = document.getElementById('userProfile').value;
+                await window.__TAURI_INTERNALS__.invoke('set_user_profile', { content: profileContent });
                 document.getElementById('status').textContent = 'Saved';
                 setTimeout(() => { document.getElementById('status').textContent = ''; }, 2000);
             } catch (e) {
@@ -614,14 +786,9 @@
             }
         }
 
-        document.getElementById('interval').addEventListener('input', (e) => {
-            document.getElementById('intervalDisplay').textContent = e.target.value + ' min';
-        });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'settings' });
-            }
+            if (e.key === 'Escape') hideWindow();
         });
 
         loadSettings();

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { background: transparent; font-family: monospace; height: 100%; overflow: hidden; }
+        .card {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: none;
+            box-shadow: none;
+            overflow: hidden;
+            animation: cardIn 0.2s ease;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        @keyframes cardIn { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
+
+        /* Title bar with macOS close button */
+        .titlebar {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            flex-shrink: 0;
+            position: relative;
+            cursor: grab;
+        }
+        .titlebar:active { cursor: grabbing; }
+        .traffic-close {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: inset 0 0 0 0.5px rgba(178,55,48,0.3);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .traffic-close svg {
+            width: 8px; height: 8px; opacity: 0; transition: opacity 0.08s;
+        }
+        .traffic-close svg path { stroke: rgba(0,0,0,0.45); }
+        .traffic-close:hover svg { opacity: 1; }
+
+        /* Pixel scene */
+        .scene {
+            position: relative;
+            height: 120px;
+            background: #1a1a1a;
+            overflow: hidden;
+            cursor: grab;
+            flex-shrink: 0;
+        }
+        .scene:active { cursor: grabbing; }
+        .ground {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, #555 0px, #555 3px, transparent 3px, transparent 6px);
+        }
+        .star {
+            position: absolute;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle { from { opacity: 0.3; } to { opacity: 1; } }
+
+        /* Pixel moon */
+        .moon {
+            position: absolute;
+            top: 15px; right: 25px;
+            width: 48px; height: 48px;
+        }
+        .moon-pixel {
+            position: absolute;
+            background: white;
+        }
+
+        /* Pixel clouds */
+        .cloud { position: absolute; }
+        .cb { width: 10px; height: 10px; background: #3a3a3a; display: inline-block; }
+
+        .pet-pixel {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .pet-pixel img { width: 90px; height: auto; image-rendering: pixelated; }
+
+        /* Stats panel */
+        .stats {
+            padding: 20px 24px;
+            background: #222;
+            flex-shrink: 0;
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+            gap: 12px;
+        }
+        .stat-row:last-child { margin-bottom: 0; }
+        .stat-name { font-size: 15px; color: #999; width: 95px; font-weight: bold; }
+        .stat-bar {
+            flex: 1;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .stat-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+        .stat-fill.happiness { background: #f5a623; }
+        .stat-fill.energy { background: #4cd964; }
+        .stat-fill.hunger { background: #ff6b6b; }
+        .stat-fill.love { background: #ff4f9a; }
+        .stat-val { font-size: 14px; color: #666; width: 30px; text-align: right; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- macOS-style title bar -->
+        <div class="titlebar" data-tauri-drag-region>
+            <div class="traffic-close" onclick="hideStatus()">
+                <svg viewBox="0 0 12 12"><path d="M3.5 3.5L8.5 8.5M8.5 3.5L3.5 8.5" stroke-width="1.1" stroke-linecap="round"/></svg>
+            </div>
+        </div>
+
+        <!-- Pixel night scene -->
+        <div class="scene" data-tauri-drag-region>
+            <!-- Pixel moon (crescent made of blocks) -->
+
+            <!-- Pixel cloud left (gray blocks, like reference) -->
+            <div style="position:absolute;top:15px;left:15px;">
+                <div style="display:flex;"><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div><div style="width:6px;height:6px;background:#444;"></div></div>
+            </div>
+
+            <!-- Pixel cloud right (gray blocks) -->
+            <div style="position:absolute;top:50px;right:30px;">
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+            </div>
+
+            <!-- Pixel moon (white + gray, crescent) -->
+            <div style="position:absolute;top:8px;right:15px;">
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:#ccc;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:#ccc;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:#ccc;"></div><div style="width:5px;height:5px;background:white;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:#ccc;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:white;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;background:white;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div></div>
+            </div>
+
+            <!-- Stars (gray, scattered) -->
+            <span class="star" style="top:10px;left:25%;color:#666;">*</span>
+            <span class="star" style="top:30px;left:45%;color:#555;animation-delay:0.5s;">*</span>
+            <span class="star" style="top:12px;left:60%;color:#666;animation-delay:1s;">*</span>
+            <span class="star" style="top:55px;left:15%;color:#555;animation-delay:0.3s;">*</span>
+            <span class="star" style="top:70px;left:70%;color:#666;animation-delay:0.8s;">*</span>
+            <span class="star" style="top:85px;left:40%;color:#555;animation-delay:1.2s;">*</span>
+
+            <!-- Pixel tree left (gray blocks) -->
+            <div style="position:absolute;bottom:2px;left:10px;display:flex;flex-direction:column;align-items:center;">
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div></div>
+            </div>
+
+            <!-- Small bush left-mid (gray) -->
+            <div style="position:absolute;bottom:2px;left:50px;display:flex;flex-direction:column;align-items:center;">
+                <div style="display:flex;"><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div></div>
+                <div style="display:flex;"><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div></div>
+            </div>
+
+            <!-- Pixel tree right (gray blocks) -->
+            <div style="position:absolute;bottom:2px;right:10px;display:flex;flex-direction:column;align-items:center;">
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div><div style="width:5px;height:5px;background:#444;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div></div>
+                <div style="display:flex;"><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;background:#333;"></div><div style="width:5px;height:5px;"></div><div style="width:5px;height:5px;"></div></div>
+            </div>
+
+            <!-- Small bush right-mid (gray) -->
+            <div style="position:absolute;bottom:2px;right:50px;display:flex;flex-direction:column;align-items:center;">
+                <div style="display:flex;"><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div></div>
+                <div style="display:flex;"><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div><div style="width:4px;height:4px;background:#3a3a3a;"></div></div>
+            </div>
+
+            <!-- Pixel rock (gray) -->
+            <div style="position:absolute;bottom:2px;left:75px;display:flex;">
+                <div style="width:5px;height:5px;background:#3a3a3a;"></div><div style="width:5px;height:5px;background:#3a3a3a;"></div>
+            </div>
+
+            <!-- Pet sitting on ground -->
+            <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);">
+                <img src="assets/claude_meow.gif" style="width:70px;height:auto;image-rendering:pixelated;">
+            </div>
+            <div class="ground"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-row">
+                <span class="stat-name">Happiness</span>
+                <div class="stat-bar"><div class="stat-fill happiness" id="happinessBar" style="width:70%"></div></div>
+                <span class="stat-val" id="happinessVal">70</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Energy</span>
+                <div class="stat-bar"><div class="stat-fill energy" id="energyBar" style="width:80%"></div></div>
+                <span class="stat-val" id="energyVal">80</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-name">Love</span>
+                <div class="stat-bar"><div class="stat-fill love" id="loveBar" style="width:50%"></div></div>
+                <span class="stat-val" id="loveVal">50</span>
+            </div>
+        </div>
+
+        <div style="padding:16px 22px;background:#1e1e1e;border-top:1px solid #2a2a2a;">
+            <div style="font-size:13px;color:#555;line-height:2;font-family:monospace;">
+                <span style="color:#999;font-size:15px;font-weight:bold;">How to level up</span><br>
+                <span style="color:#f5a623;font-weight:bold;">Happiness</span> — touch or chat with me<br>
+                <span style="color:#4cd964;font-weight:bold;">Energy</span> — take breaks (stop typing!)<br>
+                <span style="color:#ff4f9a;font-weight:bold;">Love</span> — chat often, don't ignore me~
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStatus() {
+            try {
+                const s = await window.__TAURI_INTERNALS__.invoke('get_pet_status');
+                document.getElementById('happinessVal').textContent = s.happiness;
+                document.getElementById('happinessBar').style.width = s.happiness + '%';
+                document.getElementById('energyVal').textContent = s.energy;
+                document.getElementById('energyBar').style.width = s.energy + '%';
+                document.getElementById('hungerVal').textContent = s.hunger;
+                document.getElementById('hungerBar').style.width = s.hunger + '%';
+                document.getElementById('loveVal').textContent = s.love;
+                document.getElementById('loveBar').style.width = s.love + '%';
+            } catch(e) {}
+        }
+
+        function hideStatus() {
+            window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'status' });
+        }
+
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideStatus(); });
+
+        loadStatus();
+        setInterval(loadStatus, 5000);
+    </script>
+</body>
+</html>

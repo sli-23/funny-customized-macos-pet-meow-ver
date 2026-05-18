@@ -1,6 +1,5 @@
 use crate::ai::send_to_bedrock;
 use crate::config::load_config;
-use crate::modules::activity::categorize_activity;
 use chrono::Timelike;
 
 #[tauri::command]
@@ -8,11 +7,10 @@ pub async fn generate_message(context: String) -> Result<String, String> {
     let config = load_config();
     let hour = local_hour();
     let time_context = build_time_context(hour);
-    let activity_context = categorize_activity(&context);
 
     let user_prompt = format!(
-        "Current activity: {}\n{}\nGenerate ONE short message (under 40 chars):",
-        activity_context, time_context
+        "Current context:\n{}\n{}\nRules: If [typing] is present, comment on them typing. If Spotify is playing, comment on the song. If user profile mentions hobbies/music/food, occasionally recommend something or reference their interests. Otherwise comment on their activity.\nGenerate ONE short message (under 40 chars):",
+        context, time_context
     );
 
     send_to_bedrock(&config, &user_prompt, 60, 0.9).await

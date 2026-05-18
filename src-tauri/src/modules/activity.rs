@@ -1,5 +1,38 @@
 use std::process::Command;
 
+pub fn get_context() -> String {
+    let window = get_active_window();
+    let category = categorize_activity(&window);
+    let typing = is_typing();
+    if typing {
+        format!("{} [typing]", category)
+    } else {
+        category
+    }
+}
+
+fn is_typing() -> bool {
+    let output = Command::new("ioreg")
+        .args(["-c", "IOHIDSystem"])
+        .output();
+    match output {
+        Ok(out) => {
+            let text = String::from_utf8_lossy(&out.stdout);
+            for line in text.lines() {
+                if line.contains("HIDIdleTime") {
+                    if let Some(val) = line.split_whitespace().last() {
+                        if let Ok(ns) = val.parse::<u64>() {
+                            return ns / 1_000_000_000 < 2;
+                        }
+                    }
+                }
+            }
+            false
+        }
+        Err(_) => false,
+    }
+}
+
 pub fn categorize_activity(raw: &str) -> String {
     let lower = raw.to_lowercase();
 
