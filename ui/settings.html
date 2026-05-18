@@ -18,16 +18,13 @@
         .panel {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(252, 250, 247, 0.97);
-            backdrop-filter: blur(40px) saturate(1.8);
-            -webkit-backdrop-filter: blur(40px) saturate(1.8);
-            border-radius: 12px;
+            background: #fcfaf7;
+            border-radius: 10px;
             border: none;
             box-shadow: none;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes panelIn {
             from { opacity: 0; transform: scale(0.97) translateY(6px); }
@@ -207,13 +204,17 @@
         }
         .toggle input[type="checkbox"] {
             width: 34px; height: 20px;
+            min-width: 34px;
+            padding: 0;
             -webkit-appearance: none;
+            appearance: none;
             background: rgba(0,0,0,0.1);
             border-radius: 10px;
             position: relative;
             cursor: pointer;
             transition: background 0.2s;
             border: none;
+            box-shadow: none;
         }
         .toggle input[type="checkbox"]::after {
             content: '';
@@ -227,6 +228,7 @@
         }
         .toggle input[type="checkbox"]:checked { background: #c25b28; }
         .toggle input[type="checkbox"]:checked::after { left: 16px; }
+        .toggle input[type="checkbox"]:focus { outline: none; box-shadow: none; }
         .toggle label { margin: 0; cursor: pointer; font-size: 13px; color: #4a4641; }
 
         .footer {
@@ -351,7 +353,8 @@
         .dark input, .dark select, .dark textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #e8e4df; }
         .dark input:focus, .dark select:focus, .dark textarea:focus { border-color: rgba(194,91,40,0.6); box-shadow: 0 0 0 3px rgba(194,91,40,0.15); background: rgba(255,255,255,0.08); }
         .dark input[type="range"] { background: rgba(255,255,255,0.08); }
-        .dark .toggle input[type="checkbox"] { background: rgba(255,255,255,0.1); }
+        .dark .toggle input[type="checkbox"] { background: rgba(255,255,255,0.15); }
+        .dark .toggle input[type="checkbox"]:checked { background: #e07040; }
         .dark .toggle label { color: #a09890; }
         .dark .btn-secondary { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #a09890; }
         .dark .btn-secondary:hover { background: rgba(255,255,255,0.1); }
