@@ -1,0 +1,18 @@
+{
+  "reactions": [
+    {
+      "id": "spotify",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Spotify" } },
+      "response": {
+        "messages": [
+          "Spotify! 听什么歌呢？🎵",
+          "换歌吗？推荐给我听！🎶",
+          "音乐时间！品味不错嘛～😸",
+          "在选歌呢！放什么好听的？🎧",
+          "Spotify! 边听歌边工作～🎶"
+        ],
+        "priority": 4, "cooldown_minutes": 5
+      }
+    }
+  ]
+}

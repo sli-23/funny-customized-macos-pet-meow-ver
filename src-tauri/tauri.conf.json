@@ -13,8 +13,8 @@
         "label": "main",
         "title": "ClaudeMeow",
         "url": "index.html",
-        "width": 420,
-        "height": 150,
+        "width": 450,
+        "height": 160,
         "resizable": false,
         "decorations": false,
         "transparent": true,
@@ -47,6 +47,20 @@
         "visible": false,
         "center": true,
         "titleBarStyle": "Overlay"
+      },
+      {
+        "label": "dev",
+        "title": "",
+        "url": "dev.html",
+        "width": 500,
+        "height": 150,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "x": 100,
+        "y": 5
       }
     ]
   }

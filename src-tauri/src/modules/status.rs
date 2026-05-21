@@ -1,3 +1,4 @@
+use chrono::Timelike;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -70,14 +71,46 @@ fn save_status(status: &PetStatus) {
 
 fn decay_stats(status: &mut PetStatus) {
     let now = now_secs();
+
+    // Reset stats to 100 at 9:00 AM daily (except energy)
+    let today_9am = {
+        let now_local = chrono::Local::now();
+        now_local.date_naive()
+            .and_hms_opt(9, 0, 0)
+            .and_then(|dt| dt.and_local_timezone(chrono::Local).single())
+            .map(|dt| dt.timestamp() as u64)
+            .unwrap_or(0)
+    };
+    if status.last_update < today_9am && now >= today_9am {
+        status.happiness = 100;
+        status.hunger = 100;
+        status.love = 100;
+    }
+
     let elapsed_hours = (now - status.last_update) / 3600;
     if elapsed_hours > 0 {
         status.hunger = clamp(status.hunger as i32 - (elapsed_hours as i32 * 5));
-        status.energy = clamp(status.energy as i32 - (elapsed_hours as i32 * 3));
         status.happiness = clamp(status.happiness as i32 - (elapsed_hours as i32 * 2));
         status.last_update = now;
-        update_mood(status);
-        save_status(status);
+    }
+    // Energy is time-of-day based: high in morning, drains through work hours
+    status.energy = clamp(energy_from_time_of_day() as i32);
+    update_mood(status);
+    save_status(status);
+}
+
+fn energy_from_time_of_day() -> u32 {
+    let hour = chrono::Local::now().hour();
+    match hour {
+        6..=8 => 95,    // morning: fresh
+        9..=11 => 80,   // mid-morning: productive
+        12..=13 => 60,  // lunch slump
+        14..=16 => 70,  // afternoon recovery
+        17..=18 => 50,  // end of day drain
+        19..=21 => 40,  // evening tired
+        22..=23 => 25,  // late night
+        0..=5 => 15,    // should be sleeping
+        _ => 50,
     }
 }
 
@@ -154,6 +187,7 @@ pub fn pet_rested() -> PetStatus {
     status
 }
 
+#[allow(dead_code)]
 pub fn get_context() -> String {
     let status = load_status();
     format!(

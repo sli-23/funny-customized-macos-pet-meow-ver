@@ -1,0 +1,11 @@
+{
+    "id": "weather",
+    "name": "Weather",
+    "version": "1.0.0",
+    "description": "Comments on today s weather",
+    "author": "ClaudeMeow",
+    "icon": "\ud83c\udf24",
+    "builtin": true,
+    "permissions": [],
+    "eventSubscriptions": []
+}

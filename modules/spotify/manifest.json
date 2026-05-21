@@ -1,0 +1,15 @@
+{
+    "id": "spotify",
+    "name": "Spotify",
+    "version": "1.0.0",
+    "description": "Reacts when you open Spotify",
+    "author": "ClaudeMeow",
+    "icon": "\ud83c\udfb5",
+    "builtin": true,
+    "permissions": [
+        "active_app"
+    ],
+    "eventSubscriptions": [
+        "active_app_changed"
+    ]
+}

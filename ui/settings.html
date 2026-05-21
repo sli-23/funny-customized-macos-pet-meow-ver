@@ -341,6 +341,51 @@
         .dark .update-version { color: #e07040; }
         .dark .test-status.success { color: #6bc48a; }
         .dark .test-status.error { color: #e07040; }
+
+        /* Update fold */
+        .update-folded .update-list { display: none; }
+        .update-folded .update-date { display: none; }
+        .update-version {
+            cursor: pointer; user-select: none;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 4px 0;
+        }
+        .update-fold-hint {
+            font-size: 12px; color: #a09890; font-weight: 500;
+            width: 20px; height: 20px; display: inline-flex;
+            align-items: center; justify-content: center;
+            border-radius: 4px; background: rgba(0,0,0,0.04);
+        }
+        .dark .update-fold-hint { background: rgba(255,255,255,0.06); }
+        .update-folded .update-fold-hint::after { content: '▸'; }
+        .update-item:not(.update-folded) .update-fold-hint::after { content: '▾'; }
+
+        /* Priority tab */
+        .priority-name { color: #1d1b18; font-size: 13px; font-weight: 600; }
+        .dark .priority-name { color: #e8e4df; }
+        .plvl {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 4px;
+            font-size: 11px; font-weight: 700; cursor: pointer;
+            border: 1.5px solid transparent; transition: all 0.1s;
+        }
+        .plvl-1 { background: rgba(239,68,68,0.15); color: #dc2626; border-color: rgba(239,68,68,0.3); }
+        .plvl-2 { background: rgba(245,158,11,0.15); color: #d97706; border-color: rgba(245,158,11,0.3); }
+        .plvl-3 { background: rgba(59,130,246,0.15); color: #2563eb; border-color: rgba(59,130,246,0.3); }
+        .plvl-4 { background: rgba(156,163,175,0.15); color: #6b7280; border-color: rgba(156,163,175,0.3); }
+        .plvl.active { transform: scale(1.1); }
+        .plvl-1.active { background: #dc2626; color: white; }
+        .plvl-2.active { background: #d97706; color: white; }
+        .plvl-3.active { background: #2563eb; color: white; }
+        .plvl-4.active { background: #6b7280; color: white; }
+        .plvl:hover { transform: scale(1.1); }
+        .priority-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.04);
+        }
+        .priority-row:last-child { border-bottom: none; }
+        .dark .priority-row { border-bottom-color: rgba(255,255,255,0.04); }
+        .priority-levels { display: flex; gap: 4px; }
     </style>
 </head>
 <body>
@@ -355,6 +400,8 @@
         <div class="tabs">
             <div class="tab active" onclick="switchTab('general', this)">General</div>
             <div class="tab" onclick="switchTab('extensions', this)">Extensions</div>
+            <div class="tab" onclick="switchTab('priority', this)">Priority</div>
+            <div class="tab" onclick="switchTab('secret', this)">SecretMeow</div>
             <div class="tab" onclick="switchTab('updates', this)">Updates</div>
         </div>
 
@@ -400,12 +447,8 @@
                         <textarea id="persona" placeholder="Describe the pet's personality..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Your Nickname (pet always calls you this if set)</label>
-                        <input type="text" id="userNickname" placeholder="Leave empty to use random defaults">
-                    </div>
-                    <div class="form-group">
-                        <label>Default nicknames (comma separated, used when above is empty)</label>
-                        <input type="text" id="nicknames" placeholder="人类, hooman, 铲屎官, 主人, buddy">
+                        <label>Your Nickname (what the pet calls you)</label>
+                        <input type="text" id="userNickname" placeholder="e.g. 铲屎官, hooman, buddy...">
                     </div>
                 </div>
 
@@ -456,9 +499,20 @@
                         <input type="checkbox" id="activityEnabled" checked>
                         <label for="activityEnabled">Read active window title for context</label>
                     </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="devMode" onchange="toggleDevWindow(this.checked)">
+                        <label for="devMode">Developer mode (opens dev console)</label>
+                    </div>
                     <div class="shortcut-hint">
                         Press <kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd> anywhere to chat with your pet
                     </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Permissions</div>
+                    <div class="section-desc">ClaudeMeow needs macOS permissions to detect your activity and browser URLs.</div>
+                    <div id="permStatus" style="margin-bottom:10px;"></div>
+                    <button class="btn-secondary" onclick="checkPerms()">Check Permissions</button>
                 </div>
             </div>
 
@@ -472,97 +526,57 @@
         <div class="tab-content" id="tab-extensions">
             <div class="content">
                 <div class="section">
-                    <div class="section-title">Modules</div>
-                    <div class="section-desc">Extend what ClaudeMeow can do. Each module adds new context so the AI gives smarter messages.</div>
+                    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                        <span>Modules</span>
+                        <button class="btn-secondary" onclick="refreshModules()" id="refreshBtn">Refresh</button>
+                    </div>
+                    <div class="section-desc">Drop module folders into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">modules/</code> and click Refresh to load them.</div>
+                    <div id="moduleList">
+                        <div class="ext-card" style="justify-content:center;opacity:0.5;">
+                            <div class="ext-desc">Loading modules...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">👁</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Activity Monitor</div>
-                            <div class="ext-desc">Reads your active window to know if you're coding, browsing, or slacking off.</div>
+        <!-- PRIORITY -->
+        <div class="tab-content" id="tab-priority">
+            <div class="content">
+                <div class="section">
+                    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                        <span>Module Priority</span>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn-secondary" onclick="loadPriorities()">Refresh</button>
+                            <button class="btn-secondary" onclick="resetPriorities()">Reset</button>
+                            <button class="btn-primary" onclick="savePriorities()">Save</button>
                         </div>
-                        <span class="ext-badge active">Active</span>
                     </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">⏰</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Time Awareness</div>
-                            <div class="ext-desc">Knows the time of day. Reminds you to eat lunch, go home, or sleep.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
+                    <div class="section-desc">
+                        <span class="plvl plvl-1">1</span> Critical
+                        <span class="plvl plvl-2">2</span> Important
+                        <span class="plvl plvl-3">3</span> Normal
+                        <span class="plvl plvl-4">4</span> Low
+                        — Higher level fires first. Same level = random.
                     </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🌤</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Weather</div>
-                            <div class="ext-desc">Fetches Seattle weather daily and tells you to bring an umbrella or wear sunscreen.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
+                    <div id="priorityList"></div>
+                    <div class="status" id="priorityStatus" style="margin-top:8px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECRET MEOW -->
+        <div class="tab-content" id="tab-secret">
+            <div class="content">
+                <div class="section">
+                    <div class="section-title">SecretMeow</div>
+                    <div class="section-desc">A friend can write a <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">.meow</code> file with secret messages just for you. Drop it into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">profiles/</code> and scan.</div>
+
+                    <div style="margin: 16px 0;">
+                        <button class="btn-primary" onclick="scanMeow()">Scan for .meow Files</button>
                     </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🎵</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Now Playing</div>
-                            <div class="ext-desc">Reads Spotify and comments on your music taste.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🔋</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Battery Alert</div>
-                            <div class="ext-desc">Warns you when battery drops below 20%.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">👤</div>
-                        <div class="ext-info">
-                            <div class="ext-name">User Profile</div>
-                            <div class="ext-desc">Share your hobbies and tastes so the pet knows you better.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">💪</div>
-                        <div class="ext-info">
-                            <div class="ext-name">励志句子</div>
-                            <div class="ext-desc">Every couple hours, shares an inspirational quote from hitokoto.cn.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">📹</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Zoom Meeting</div>
-                            <div class="ext-desc">Detects when you're in a Zoom meeting and stays quiet or cheers you on.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(194,91,40,0.08);">🖥</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Performance Monitor</div>
-                            <div class="ext-desc">Warns when CPU/RAM exceeds 80% or laptop is thermal throttling.</div>
-                        </div>
-                        <span class="ext-badge active">Active</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(0,0,0,0.03);">🧍</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Stand Up Reminders</div>
-                            <div class="ext-desc">Tracks how long you've been sitting and nudges you to stretch.</div>
-                        </div>
-                        <span class="ext-badge coming">Coming soon</span>
-                    </div>
-                    <div class="ext-card">
-                        <div class="ext-icon" style="background: rgba(0,0,0,0.03);">📅</div>
-                        <div class="ext-info">
-                            <div class="ext-name">Calendar</div>
-                            <div class="ext-desc">Connects to your calendar and warns you before meetings start.</div>
-                        </div>
-                        <span class="ext-badge coming">Coming soon</span>
-                    </div>
+
+                    <div id="meowResult" style="min-height:40px;"></div>
                 </div>
             </div>
         </div>
@@ -572,62 +586,79 @@
             <div class="content">
                 <div class="section">
                     <div class="section-title">What's New</div>
+
                     <div class="update-item">
-                        <div class="update-version">v1.2</div>
+                        <div class="update-version">v1.3</div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Weather module — real Seattle weather daily</li>
+                            <li><span class="update-tag new">New</span> Module system — drop-in reaction packs (like game mods)</li>
+                            <li><span class="update-tag new">New</span> Event-driven runtime — Event Bus, State Machine, Reaction Engine</li>
+                            <li><span class="update-tag new">New</span> Browser URL detection — reacts to GitHub, YouTube, Amazon internal sites</li>
+                            <li><span class="update-tag new">New</span> 10 modules: Coding, Slack, Zoom, Spotify, GitHub, YouTube, Social, Weather, Health, Amazon Internal</li>
+                            <li><span class="update-tag new">New</span> 4-level priority system (Critical/Important/Normal/Low)</li>
+                            <li><span class="update-tag new">New</span> Context Engine — pet remembers mood, streaks, and adapts personality</li>
+                            <li><span class="update-tag new">New</span> Health reminders every 45 min (posture, water, Monster, breaks)</li>
+                            <li><span class="update-tag new">New</span> Floating score numbers (+3/-15) in pixel font above pet</li>
+                            <li><span class="update-tag new">New</span> Dev Console — floating terminal-style event log</li>
+                            <li><span class="update-tag new">New</span> Score History in Meow Status panel</li>
+                            <li><span class="update-tag new">New</span> Screen time tracking — warns after 4h on same app</li>
+                            <li><span class="update-tag new">New</span> SecretMeow tab — scan for .meow files from friends</li>
+                            <li><span class="update-tag new">New</span> Permission check with Fix buttons</li>
+                            <li><span class="update-tag improve">Improve</span> AI personality — acts like a real cat (purring, stretching, nuzzling)</li>
+                            <li><span class="update-tag improve">Improve</span> AI context-aware — mentions coding streaks, mood, time of day</li>
+                            <li><span class="update-tag improve">Improve</span> Module reactions won't interrupt touch/chat</li>
+                            <li><span class="update-tag improve">Improve</span> Energy stat now time-of-day based (not typing-based)</li>
+                            <li><span class="update-tag improve">Improve</span> Daily stat reset at 9 AM</li>
+                            <li><span class="update-tag fix">Fix</span> App name parsing (no more trailing " -")</li>
+                            <li><span class="update-tag fix">Fix</span> Pet skips itself (no self-reactions)</li>
+                            <li><span class="update-tag fix">Fix</span> Status panel scroll — titlebar stays fixed</li>
+                        </ul>
+                    </div>
+
+                    <div class="update-item update-folded">
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.2 <span class="update-fold-hint"></span></div>
+                        <div class="update-date">May 2026</div>
+                        <ul class="update-list">
+                            <li><span class="update-tag new">New</span> Weather module — real weather daily</li>
                             <li><span class="update-tag new">New</span> Spotify — comments on your music taste</li>
                             <li><span class="update-tag new">New</span> Battery alert — warns when below 20%</li>
                             <li><span class="update-tag new">New</span> Performance monitor — CPU/RAM overload warnings</li>
                             <li><span class="update-tag new">New</span> Zoom meeting detection</li>
-                            <li><span class="update-tag new">New</span> 励志句子 — inspirational quotes (Chinese + English)</li>
-                            <li><span class="update-tag new">New</span> Typing detection — pet notices when you're typing</li>
-                            <li><span class="update-tag new">New</span> Time greetings — morning, lunch, evening, late night reminders</li>
-                            <li><span class="update-tag new">New</span> User Profile — tell the pet your hobbies and tastes</li>
-                            <li><span class="update-tag new">New</span> Pet recommends things based on your interests</li>
-                            <li><span class="update-tag new">New</span> Cat kaomojis in messages (=^･ω･^=)</li>
-                            <li><span class="update-tag new">New</span> Meow Status — Tamagotchi stats (Happiness, Energy, Love)</li>
-                            <li><span class="update-tag new">New</span> Rage mode — tap 5x fast and the pet gets angry!</li>
-                            <li><span class="update-tag new">New</span> Chat knows weather — ask about weather and get real answers</li>
-                            <li><span class="update-tag new">New</span> Dark mode support (system / light / dark)</li>
-                            <li><span class="update-tag improve">Improve</span> Custom floating settings panel (Raycast/Arc style)</li>
-                            <li><span class="update-tag improve">Improve</span> macOS traffic light buttons</li>
-                            <li><span class="update-tag improve">Improve</span> Only pet is draggable — bubble won't block your windows</li>
-                            <li><span class="update-tag improve">Improve</span> Chat reply bubble uses Claude terracotta color</li>
-                            <li><span class="update-tag improve">Improve</span> Bubble pop animation on touch</li>
-                            <li><span class="update-tag fix">Fix</span> Idle gap respects settings interval (no more message spam)</li>
-                            <li><span class="update-tag fix">Fix</span> Late night reminder only fires once per night</li>
+                            <li><span class="update-tag new">New</span> 励志句子 — inspirational quotes</li>
+                            <li><span class="update-tag new">New</span> Typing detection</li>
+                            <li><span class="update-tag new">New</span> Time greetings — morning, lunch, evening, late night</li>
+                            <li><span class="update-tag new">New</span> User Profile</li>
+                            <li><span class="update-tag new">New</span> Cat kaomojis (=^･ω･^=)</li>
+                            <li><span class="update-tag new">New</span> Meow Status — Tamagotchi stats</li>
+                            <li><span class="update-tag new">New</span> Rage mode — tap 5x = angry!</li>
+                            <li><span class="update-tag new">New</span> Dark mode support</li>
+                            <li><span class="update-tag improve">Improve</span> Custom floating settings panel</li>
+                            <li><span class="update-tag fix">Fix</span> Message spam fix</li>
                         </ul>
                     </div>
 
-                    <div class="update-item">
-                        <div class="update-version">v1.1</div>
+                    <div class="update-item update-folded">
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.1 <span class="update-fold-hint"></span></div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Bedrock API Key auth with test button</li>
-                            <li><span class="update-tag new">New</span> Chat mode — press <b>Ctrl+Cmd+C</b> to talk to your pet</li>
-                            <li><span class="update-tag new">New</span> Touch reactions — tap for cute sounds, poke for dramatic reactions</li>
-                            <li><span class="update-tag new">New</span> Activity detection — pet knows if you're coding or slacking</li>
-                            <li><span class="update-tag new">New</span> Priority message scheduler (touch > chat > activity > modules)</li>
-                            <li><span class="update-tag new">New</span> Module system for extensible features</li>
-                            <li><span class="update-tag new">New</span> Claude-styled settings with tabs (General / Extensions / Updates)</li>
-                            <li><span class="update-tag improve">Improve</span> Adaptive tray icon for dark/light mode</li>
-                            <li><span class="update-tag improve">Improve</span> App icon — Claude terracotta + white cat</li>
-                            <li><span class="update-tag improve">Improve</span> Dynamic speech bubbles with word wrap</li>
-                            <li><span class="update-tag fix">Fix</span> Local timezone support</li>
-                            <li><span class="update-tag fix">Fix</span> Config persistence across restarts</li>
+                            <li><span class="update-tag new">New</span> Bedrock API Key auth</li>
+                            <li><span class="update-tag new">New</span> Chat mode (Ctrl+Cmd+C)</li>
+                            <li><span class="update-tag new">New</span> Touch reactions</li>
+                            <li><span class="update-tag new">New</span> Activity detection</li>
+                            <li><span class="update-tag new">New</span> Priority message scheduler</li>
+                            <li><span class="update-tag improve">Improve</span> Adaptive tray icon</li>
+                            <li><span class="update-tag fix">Fix</span> Local timezone, config persistence</li>
                         </ul>
                     </div>
 
-                    <div class="update-item">
-                        <div class="update-version">v1.0</div>
+                    <div class="update-item update-folded">
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.0 <span class="update-fold-hint"></span></div>
                         <div class="update-date">Initial Release</div>
                         <ul class="update-list">
                             <li>Desktop pet with pixel art cat sprite</li>
                             <li>Periodic AI messages via Amazon Bedrock</li>
                             <li>System tray with show/hide/settings/quit</li>
-                            <li>Configurable persona, nicknames, and interval</li>
+                            <li>Configurable persona and interval</li>
                         </ul>
                     </div>
                 </div>
@@ -712,8 +743,8 @@
                 document.getElementById('persona').value = config.persona;
                 document.getElementById('interval').value = config.interval_minutes;
                 document.getElementById('userNickname').value = config.user_nickname || '';
-                document.getElementById('nicknames').value = config.nicknames.join(', ');
-                document.getElementById('activityEnabled').checked = config.activity_enabled;
+                document.getElementById('activityEnabled').checked = config.activity_enabled !== false;
+                document.getElementById('devMode').checked = config.dev_mode || false;
             } catch (e) {
                 document.getElementById('status').textContent = 'Error loading: ' + e;
             }
@@ -725,8 +756,9 @@
                 model_id: document.getElementById('modelId').value,
                 persona: document.getElementById('persona').value,
                 interval_minutes: parseInt(document.getElementById('interval').value),
-                nicknames: document.getElementById('nicknames').value.split(',').map(s => s.trim()).filter(s => s),
+                nicknames: [],
                 activity_enabled: document.getElementById('activityEnabled').checked,
+                dev_mode: document.getElementById('devMode').checked,
                 auth_mode: 'apikey',
                 api_key: document.getElementById('apiKey').value,
                 user_nickname: document.getElementById('userNickname').value.trim(),
@@ -747,7 +779,216 @@
             if (e.key === 'Escape') hideWindow();
         });
 
+        // ── Module Panel ──
+        async function loadModules() {
+            try {
+                const modules = await window.__TAURI_INTERNALS__.invoke('get_modules');
+                renderModules(modules);
+            } catch(e) {
+                console.error('loadModules error:', e);
+            }
+        }
+
+        function renderModules(modules) {
+            const container = document.getElementById('moduleList');
+            if (!modules || modules.length === 0) {
+                container.innerHTML = '<div class="ext-card" style="justify-content:center;opacity:0.5;"><div class="ext-desc">No modules found in modules/ folder</div></div>';
+                return;
+            }
+
+            let html = '';
+            for (const m of modules) {
+                const statusClass = m.status === 'active' ? 'active' : m.status === 'error' ? 'error' : 'disabled';
+                const statusText = m.status === 'active' ? 'Active' : m.status === 'error' ? 'Error' : 'Disabled';
+                const toggleChecked = m.status === 'active' ? 'checked' : '';
+                const isError = m.status === 'error';
+
+                html += `<div class="ext-card">
+                    <div class="ext-icon" style="background: rgba(194,91,40,0.08);">${m.icon || '📦'}</div>
+                    <div class="ext-info">
+                        <div class="ext-name">${escHtml(m.name)} <span style="font-size:10px;color:#888;font-weight:400;">v${escHtml(m.version)}</span></div>
+                        <div class="ext-desc">${escHtml(m.description)} · ${m.reaction_count} reactions</div>
+                        ${m.error ? '<div style="font-size:10px;color:#c25b28;margin-top:2px;">' + escHtml(m.error) + '</div>' : ''}
+                    </div>
+                    ${isError ? '<span class="ext-badge" style="background:rgba(194,91,40,0.1);color:#c25b28;">Error</span>' :
+                    '<label class="toggle" style="margin:0;"><input type="checkbox" ' + toggleChecked + ' onchange="toggleMod(\'' + escHtml(m.id) + '\', this.checked)"></label>'}
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        async function refreshModules() {
+            const btn = document.getElementById('refreshBtn');
+            btn.textContent = '...';
+            btn.disabled = true;
+            try {
+                const modules = await window.__TAURI_INTERNALS__.invoke('refresh_modules');
+                renderModules(modules);
+            } catch(e) {
+                console.error('refreshModules error:', e);
+            }
+            btn.textContent = 'Refresh';
+            btn.disabled = false;
+        }
+
+        async function toggleMod(id, enabled) {
+            try {
+                await window.__TAURI_INTERNALS__.invoke('toggle_module', { id, enabled });
+            } catch(e) {
+                console.error('toggleModule error:', e);
+            }
+        }
+
+        function escHtml(t) {
+            if (!t) return '';
+            const d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+
+        function toggleDevWindow(enabled) {
+            if (enabled) {
+                window.__TAURI_INTERNALS__.invoke('plugin:window|show', { label: 'dev' });
+            } else {
+                window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'dev' });
+            }
+        }
+
+        async function checkPerms() {
+            const container = document.getElementById('permStatus');
+            container.innerHTML = '<div style="font-size:12px;color:#a09890;">Checking...</div>';
+            try {
+                const perms = await window.__TAURI_INTERNALS__.invoke('check_permissions_status');
+                let html = '';
+                const items = [
+                    { key: 'accessibility', label: 'Accessibility (app detection)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility' },
+                    { key: 'window_titles', label: 'Window Titles (activity context)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility' },
+                    { key: 'browser_url', label: 'Browser URL (Chrome automation)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Automation' },
+                ];
+                let hasIssues = false;
+                for (const item of items) {
+                    const ok = perms[item.key];
+                    const icon = ok ? '✓' : '✗';
+                    const color = ok ? '#5a9e6f' : '#c25b28';
+                    const status = ok ? 'Granted' : 'Not granted';
+                    if (!ok) hasIssues = true;
+                    html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">
+                        <span style="color:${color};font-weight:bold;font-size:14px;">${icon}</span>
+                        <span style="color:#4a4641;">${item.label}</span>
+                        <span style="color:${color};margin-left:auto;font-weight:500;">${status}</span>
+                        ${!ok ? '<button class="btn-secondary" style="font-size:10px;padding:2px 8px;margin-left:4px;" onclick="openSettings(\'' + item.fix + '\')">Fix</button>' : ''}
+                    </div>`;
+                }
+                if (hasIssues) {
+                    html += `<div style="font-size:11px;color:#a09890;margin-top:10px;line-height:1.6;padding:8px;background:rgba(0,0,0,0.03);border-radius:6px;">
+                        <b style="color:#c25b28;">How to fix:</b><br>
+                        1. Click "Fix" to open System Settings<br>
+                        2. Find <b>ClaudeMeow</b> (or the terminal running it) in the list<br>
+                        3. Toggle it ON<br>
+                        4. Restart ClaudeMeow
+                    </div>`;
+                }
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<div style="font-size:12px;color:#c25b28;">Error checking: ' + e + '</div>';
+            }
+        }
+
+        function openSettings(url) {
+            window.__TAURI_INTERNALS__.invoke('open_system_settings', { url });
+        }
+
+        // ── Priority Tab ──
+        let priorityData = {};
+        const DEFAULT_LEVELS = { health: 1, 'amazon-internal': 2, coding: 2, zoom: 2, slack: 3, github: 3, spotify: 3, social: 3, youtube: 3, weather: 3 };
+
+        async function loadPriorities() {
+            try {
+                const modules = await window.__TAURI_INTERNALS__.invoke('get_modules');
+                const overrides = await window.__TAURI_INTERNALS__.invoke('get_priority_overrides');
+                priorityData = {};
+                for (const m of modules) {
+                    const def = DEFAULT_LEVELS[m.id] || 3;
+                    priorityData[m.id] = { name: m.name, level: overrides[m.id] || def, default: def };
+                }
+                renderPriorities();
+            } catch(e) { console.error(e); }
+        }
+
+        function renderPriorities() {
+            const container = document.getElementById('priorityList');
+            const sorted = Object.entries(priorityData).sort((a, b) => a[1].level - b[1].level);
+            let html = '';
+            for (const [id, data] of sorted) {
+                html += `<div class="priority-row">
+                    <div class="priority-name" style="flex:1;">${escHtml(data.name)}</div>
+                    <div class="priority-levels">
+                        ${[1,2,3,4].map(l =>
+                            `<span class="plvl plvl-${l} ${data.level === l ? 'active' : ''}" onclick="setLevel('${id}', ${l})">${l}</span>`
+                        ).join('')}
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function setLevel(id, level) {
+            priorityData[id].level = level;
+            renderPriorities();
+        }
+
+        async function savePriorities() {
+            const overrides = {};
+            for (const [id, data] of Object.entries(priorityData)) {
+                overrides[id] = data.level;
+            }
+            try {
+                await window.__TAURI_INTERNALS__.invoke('set_priority_overrides', { overrides });
+                document.getElementById('priorityStatus').textContent = 'Saved!';
+                setTimeout(() => document.getElementById('priorityStatus').textContent = '', 2000);
+            } catch(e) {
+                document.getElementById('priorityStatus').textContent = 'Error: ' + e;
+            }
+        }
+
+        async function resetPriorities() {
+            for (const [id, data] of Object.entries(priorityData)) {
+                data.level = data.default;
+            }
+            renderPriorities();
+            await window.__TAURI_INTERNALS__.invoke('set_priority_overrides', { overrides: {} });
+            document.getElementById('priorityStatus').textContent = 'Reset to defaults';
+            setTimeout(() => document.getElementById('priorityStatus').textContent = '', 2000);
+        }
+
+        async function scanMeow() {
+            const container = document.getElementById('meowResult');
+            container.innerHTML = '<div style="font-size:12px;color:#a09890;">Scanning...</div>';
+            try {
+                const result = await window.__TAURI_INTERNALS__.invoke('scan_secret_meow');
+                if (result.found) {
+                    let html = `<div style="padding:12px;background:rgba(90,158,111,0.08);border:1px solid rgba(90,158,111,0.2);border-radius:8px;">
+                        <div style="font-size:14px;font-weight:600;color:#5a9e6f;margin-bottom:8px;">
+                            ${result.from_littleshrimp ? '🦐 ' : '🐱 '}${escHtml(result.message)}
+                        </div>
+                        <div style="font-size:11px;color:#7a756e;">
+                            Files found: ${result.files.map(f => '<code>' + escHtml(f) + '</code>').join(', ')}
+                        </div>
+                    </div>`;
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `<div style="padding:12px;background:rgba(0,0,0,0.03);border-radius:8px;font-size:12px;color:#a09890;">
+                        No .meow files found yet 🐱
+                    </div>`;
+                }
+            } catch(e) {
+                container.innerHTML = '<div style="font-size:12px;color:#c25b28;">Error: ' + e + '</div>';
+            }
+        }
+
         loadSettings();
+        loadModules();
+        loadPriorities();
     </script>
 </body>
 </html>

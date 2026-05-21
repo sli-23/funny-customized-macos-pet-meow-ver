@@ -22,7 +22,8 @@ fn is_typing() -> bool {
                 if line.contains("HIDIdleTime") {
                     if let Some(val) = line.split_whitespace().last() {
                         if let Ok(ns) = val.parse::<u64>() {
-                            return ns / 1_000_000_000 < 2;
+                            // < 1 second idle = actively inputting (keyboard or mouse)
+                            return ns / 1_000_000_000 < 1;
                         }
                     }
                 }

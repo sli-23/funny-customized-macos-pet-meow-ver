@@ -1,0 +1,18 @@
+{
+  "reactions": [
+    {
+      "id": "youtube",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "youtube" } },
+      "response": {
+        "messages": [
+          "又在看YouTube！摸鱼被我抓到了！🐟",
+          "YouTube...是在学习吗？我不信！😼",
+          "别看了！回来工作！(=`ω´=)",
+          "摸鱼摸鱼～我要告诉老板！😾",
+          "YouTube! 看什么视频呢？好看吗？📺"
+        ],
+        "priority": 1, "cooldown_minutes": 5
+      }
+    }
+  ]
+}

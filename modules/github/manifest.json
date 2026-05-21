@@ -1,0 +1,15 @@
+{
+    "id": "github",
+    "name": "GitHub",
+    "version": "1.0.0",
+    "description": "Reacts when browsing GitHub",
+    "author": "ClaudeMeow",
+    "icon": "\ud83d\udc19",
+    "builtin": true,
+    "permissions": [
+        "browser_url"
+    ],
+    "eventSubscriptions": [
+        "browser_url_changed"
+    ]
+}

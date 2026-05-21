@@ -29,11 +29,10 @@ We also updated the settings panel and added more details along with a preview o
 3. Install Tauri CLI: `cargo install tauri-cli`
 
 ## Run
-In the current version we only allow local dev run. 
+In the current version we only allow local dev run.
 
 ```bash
 git clone https://github.com/sli-23/funny-customized-macos-pet-meow-ver.git
 cd funny-customized-macos-pet-meow-ver
 cargo tauri dev
 ```
-

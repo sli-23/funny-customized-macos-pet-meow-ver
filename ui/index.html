@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        @font-face {
+            font-family: 'Pixel';
+            src: url('assets/pixel-font.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
+    <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             background: transparent;
@@ -16,7 +24,7 @@
         body:active { cursor: grabbing; }
         .container {
             position: absolute;
-            bottom: 5px;
+            bottom: 3px;
             left: 5px;
             display: flex;
             align-items: flex-end;
@@ -28,6 +36,7 @@
             image-rendering: pixelated;
             -webkit-user-drag: none;
             display: block;
+            padding-bottom: 2px;
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
         }
         @media (prefers-color-scheme: dark) {
@@ -89,14 +98,18 @@
             font-weight: bold;
             color: black;
             transition: transform 0.1s;
-            max-width: 220px;
+            max-width: 250px;
             min-width: 40px;
+            max-height: 80px;
+            overflow-y: auto;
             word-wrap: break-word;
             overflow-wrap: break-word;
             white-space: pre-wrap;
             line-height: 1.4;
             image-rendering: pixelated;
         }
+        .pixel-bubble::-webkit-scrollbar { width: 3px; }
+        .pixel-bubble::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
         /* Pixel staircase tail pointing left toward pet */
         .pixel-bubble::before,
         .pixel-bubble::after { content: ''; position: absolute; }
@@ -151,10 +164,41 @@
             user-select: auto;
         }
         .chat-input::placeholder { color: #999; }
+
+        /* ── Floating Numbers ── */
+        .float-numbers {
+            position: absolute;
+            bottom: 75px;
+            left: 30px;
+            width: 90px;
+            pointer-events: none;
+        }
+        .float-num {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            font-family: 'Pixel', monospace;
+            font-size: 11px;
+            font-weight: normal;
+            animation: floatUp 1.2s ease-out forwards;
+            pointer-events: none;
+            image-rendering: pixelated;
+            -webkit-font-smoothing: none;
+        }
+        .float-num.positive { color: #2d8f3e; }
+        .float-num.negative { color: #ff6b6b; }
+        .float-num.neutral { color: #5ac8fa; }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            75% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-18px); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="float-numbers" id="floatNumbers"></div>
         <img class="pet" src="assets/claude_meow.gif" draggable="false" id="pet" data-tauri-drag-region>
         <div class="bubble-wrapper" id="bubble">
         </div>
@@ -305,7 +349,7 @@
                     this.timers.hide = setTimeout(() => {
                         this.hide();
                         this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
-                    }, 40000);
+                    }, 30000);
                 }, 5000);
             },
 
@@ -314,10 +358,11 @@
                 this.clearTimers();
                 this.channel = 'chat';
                 this.show(text, { cls: 'chat-reply' });
+                invoke('emit_dev_log', { tag: 'BUBBLE', tagClass: 'reaction', message: '[chat] "' + text + '"' }).catch(() => {});
                 this.timers.hide = setTimeout(() => {
                     this.hide();
                     this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
-                }, 60000);
+                }, 30000);
             },
 
             // ── Channel: Activity (AI auto-generated) ──
@@ -325,10 +370,11 @@
                 this.clearTimers();
                 this.channel = 'activity';
                 this.show(text);
+                invoke('emit_dev_log', { tag: 'BUBBLE', tagClass: 'event', message: '[activity] "' + text + '"' }).catch(() => {});
                 this.timers.hide = setTimeout(() => {
                     this.hide();
                     this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
-                }, 60000);
+                }, 30000);
             },
 
             // ── Channel: Module ──
@@ -336,10 +382,11 @@
                 this.clearTimers();
                 this.channel = 'module';
                 this.show(text);
+                invoke('emit_dev_log', { tag: 'BUBBLE', tagClass: 'url', message: '[module] "' + text + '"' }).catch(() => {});
                 this.timers.hide = setTimeout(() => {
                     this.hide();
                     this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
-                }, 60000);
+                }, 30000);
             },
 
             // ── Idle cycle brain ──
@@ -360,24 +407,34 @@
                         mod.lastRun = Date.now();
                         try { localStorage.setItem('mod_' + mod.id, String(mod.lastRun)); } catch(e) {}
                         if (msg) {
+                            invoke('emit_dev_log', { tag: 'MOD', tagClass: 'url', message: 'built-in "' + mod.id + '" fired: "' + msg.slice(0,50) + '"' }).catch(() => {});
                             this.onModule(msg);
                             return;
                         }
                     } catch(e) { /* skip this module */ }
                 }
+                invoke('emit_dev_log', { tag: 'IDLE', tagClass: 'skip', message: 'no built-in module due, calling AI...' }).catch(() => {});
                 await this.runActivity();
             },
 
             async runActivity() {
+                // AI activity is lowest system priority — don't fire if module reaction is showing
+                if (this.channel === 'module') {
+                    invoke('emit_dev_log', { tag: 'AI', tagClass: 'skip', message: 'skipped — module reaction active' }).catch(() => {});
+                    return;
+                }
                 let context = 'User is at their computer';
                 try {
                     context = await invoke('get_activity_context');
                 } catch(e) {}
                 try {
                     const message = await invoke('generate_message', { context });
+                    invoke('emit_dev_log', { tag: 'AI', tagClass: 'reaction', message: 'activity msg: "' + message + '" ctx: ' + context.slice(0, 60) }).catch(() => {});
                     this.onActivity(message);
                 } catch(e) {
-                    this.onActivity(getActivityFallback(context));
+                    const fb = getActivityFallback(context);
+                    invoke('emit_dev_log', { tag: 'AI', tagClass: 'skip', message: 'fallback msg: "' + fb + '"' }).catch(() => {});
+                    this.onActivity(fb);
                 }
             },
 
@@ -529,12 +586,21 @@
             tapResetTimer = setTimeout(() => { tapCount = 0; }, 3000);
 
             clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => {
+            clickTimer = setTimeout(async () => {
                 if (tapCount >= 5) {
                     scheduler.onTouch(fillNick(pick(angryMessages)));
+                    invoke('pet_angry').catch(() => {});
+                    invoke('context_on_rage').catch(() => {});
+                    invoke('log_status_change', { source: 'touch', detail: 'rage tap (5x)', delta: -15 }).catch(() => {});
+                    invoke('emit_dev_log', { tag: 'TOUCH', tagClass: 'error', message: 'rage tap (5x) happiness -15' }).catch(() => {});
+                    showFloatingNumber(-15);
                     tapCount = 0;
                 } else {
                     scheduler.onTouch(pick(tapMessages));
+                    invoke('pet_touched').catch(() => {});
+                    invoke('log_status_change', { source: 'touch', detail: 'pet touched', delta: 3 }).catch(() => {});
+                    invoke('emit_dev_log', { tag: 'TOUCH', tagClass: 'event', message: 'pet tapped happiness +3' }).catch(() => {});
+                    showFloatingNumber(+3);
                 }
             }, 250);
         });
@@ -544,6 +610,10 @@
             clearTimeout(clickTimer);
             playAnim();
             scheduler.onTouch(fillNick(pick(pokeMessages)));
+            invoke('pet_touched').catch(() => {});
+            invoke('log_status_change', { source: 'touch', detail: 'pet poked', delta: 3 }).catch(() => {});
+            invoke('emit_dev_log', { tag: 'TOUCH', tagClass: 'event', message: 'pet double-tapped happiness +3' }).catch(() => {});
+            showFloatingNumber(+3);
         });
 
         // ━━━━━━━━━━━━━━━━━━━━━━
@@ -576,6 +646,11 @@
             try {
                 const reply = await invoke('chat_message', { userText: text });
                 scheduler.onChat(reply || fillNick('{n}：...嗯？🤔'));
+                invoke('pet_chatted').catch(() => {});
+                invoke('context_on_chat').catch(() => {});
+                invoke('log_status_change', { source: 'chat', detail: 'chatted with pet', delta: 5 }).catch(() => {});
+                invoke('emit_dev_log', { tag: 'CHAT', tagClass: 'reaction', message: 'user chatted: "' + text + '" → happiness +5, love +5' }).catch(() => {});
+                showFloatingNumber(+5);
             } catch(err) {
                 scheduler.onChat('Error: ' + String(err).slice(0, 60));
             }
@@ -608,8 +683,8 @@
                 const ctx = await invoke('get_activity_context');
                 const now = Date.now();
 
-                // Typing detection — at most once per 5 min
-                if (ctx.includes('[typing]') && now - lastTypingAlert > 300000) {
+                // Typing detection — at most once per 15 min
+                if (ctx.includes('[typing]') && now - lastTypingAlert > 900000) {
                     lastTypingAlert = now;
                     scheduler.onActivity(getActivityFallback(ctx));
                     return;
@@ -654,7 +729,63 @@
                     return;
                 }
             } catch(e) {}
-        }, 30000);
+        }, 60000);
+
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // FLOATING NUMBERS
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        const floatContainer = document.getElementById('floatNumbers');
+        let floatCount = 0;
+
+        function showFloatingNumber(delta) {
+            if (delta === 0) return;
+            if (floatCount >= 5) return;
+
+            const el = document.createElement('div');
+            el.className = 'float-num ' + (delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'neutral');
+            el.textContent = (delta > 0 ? '+' : '') + delta;
+            el.style.bottom = (floatCount * 20) + 'px';
+
+            floatContainer.appendChild(el);
+            floatCount++;
+
+            setTimeout(() => {
+                el.remove();
+                floatCount--;
+            }, 1200);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        // RUNTIME EVENT LISTENER
+        // ━━━━━━━━━━━━━━━━━━━━━━
+        if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.transformCallback) {
+            window.__TAURI_INTERNALS__.invoke('plugin:event|listen', {
+                event: 'module-reaction',
+                target: { kind: 'Any' },
+                handler: window.__TAURI_INTERNALS__.transformCallback((event) => {
+                    const data = event.payload;
+                    if (data && data.message) {
+                        if (scheduler.channel === 'touch' || scheduler.channel === 'chat') {
+                            invoke('emit_dev_log', { tag: 'BLOCK', tagClass: 'skip', message: 'module reaction blocked (channel=' + scheduler.channel + '): "' + data.message + '"' }).catch(() => {});
+                            return;
+                        }
+                        playAnim();
+                        scheduler.onModule(data.message);
+                    }
+                })
+            });
+
+            window.__TAURI_INTERNALS__.invoke('plugin:event|listen', {
+                event: 'pet-status-changed',
+                target: { kind: 'Any' },
+                handler: window.__TAURI_INTERNALS__.transformCallback((event) => {
+                    const data = event.payload;
+                    if (data && data.delta) {
+                        showFloatingNumber(data.delta);
+                    }
+                })
+            });
+        }
 
         // ━━━━━━━━━━━━━━━━━━━━━━
         // LOAD .meow PROFILE + START

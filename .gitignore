@@ -6,3 +6,9 @@ node_modules/
 *.meow
 config.json
 profiles/
+
+# Private modules (not for public distribution)
+modules/amazon-internal/
+
+# Claude Code
+.claude/

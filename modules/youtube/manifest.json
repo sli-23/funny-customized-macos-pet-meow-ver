@@ -1,0 +1,15 @@
+{
+    "id": "youtube",
+    "name": "YouTube",
+    "version": "1.0.0",
+    "description": "Reacts when you are watching YouTube",
+    "author": "ClaudeMeow",
+    "icon": "\ud83d\udcfa",
+    "builtin": true,
+    "permissions": [
+        "browser_url"
+    ],
+    "eventSubscriptions": [
+        "browser_url_changed"
+    ]
+}

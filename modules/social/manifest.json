@@ -1,0 +1,15 @@
+{
+    "id": "social",
+    "name": "Social Media",
+    "version": "1.0.0",
+    "description": "Reacts to Reddit, Twitter, Bilibili",
+    "author": "ClaudeMeow",
+    "icon": "\ud83d\udc26",
+    "builtin": true,
+    "permissions": [
+        "browser_url"
+    ],
+    "eventSubscriptions": [
+        "browser_url_changed"
+    ]
+}

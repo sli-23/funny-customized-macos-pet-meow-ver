@@ -1,0 +1,11 @@
+{
+    "id": "health",
+    "name": "Health",
+    "version": "1.0.0",
+    "description": "Reminds you about posture, hydration, and healthy habits every 45 min",
+    "author": "ClaudeMeow",
+    "icon": "💪",
+    "builtin": true,
+    "permissions": [],
+    "eventSubscriptions": []
+}

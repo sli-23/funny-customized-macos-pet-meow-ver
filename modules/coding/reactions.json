@@ -1,0 +1,60 @@
+{
+  "reactions": [
+    {
+      "id": "vscode",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Code" } },
+      "response": {
+        "messages": ["写代码呢！加油～💪 (=^･ω･^=)", "Coding中！记得喝水哦～💧", "好认真在写代码！厉害！✨", "Bug写完了吗？嘻嘻～😸", "IDE打开了！今天写什么呢？"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "kiro",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Kiro" } },
+      "response": {
+        "messages": ["Kiro! Amazon的IDE！在写代码呢～💪", "用Kiro开发中！加油！✨", "Kiro打开了！今天build什么？", "在Kiro里coding！好认真！(=^･ω･^=)"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "intellij",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "IntelliJ" } },
+      "response": {
+        "messages": ["IntelliJ! Java大佬！☕", "在写Java呢！加油～", "IDE好重...电脑还好吗？😅"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "cursor",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Cursor" } },
+      "response": {
+        "messages": ["Cursor! AI辅助写代码中～🤖", "用AI写代码呢！效率up！✨", "Cursor打开了！今天pair programming！"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "terminal",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Terminal" } },
+      "response": {
+        "messages": ["Terminal! 命令行大师！🖥", "在用终端...在deploy吗？", "黑客模式启动！😎", "命令行噼里啪啦～酷！"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "iterm",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "iTerm" } },
+      "response": {
+        "messages": ["iTerm! 终端达人！🖥", "又在terminal里折腾什么呢？", "命令行的世界！加油！💪"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "warp",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Warp" } },
+      "response": {
+        "messages": ["Warp终端！好酷的工具～✨", "在Warp里写命令呢！", "AI终端！未来感～🚀"],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    }
+  ]
+}
