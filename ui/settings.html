@@ -584,8 +584,19 @@
         <!-- UPDATES -->
         <div class="tab-content" id="tab-updates">
             <div class="content">
+                <div class="section" id="updateCard">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                        <div style="width:36px;height:36px;border-radius:8px;background:rgba(194,91,40,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;">🐱</div>
+                        <div style="flex:1;">
+                            <div style="font-size:14px;font-weight:600;" class="priority-name">ClaudeMeow</div>
+                            <div style="font-size:11px;color:#a09890;">v1.3.2 · You're up to date</div>
+                        </div>
+                        <button class="btn-secondary" onclick="checkForUpdate()" id="updateBtn">Check for Updates</button>
+                    </div>
+                    <div id="updateStatus"></div>
+                </div>
                 <div class="section">
-                    <div class="section-title">What's New</div>
+                    <div class="section-title">Changelog</div>
 
                     <div class="update-item">
                         <div class="update-version">v1.3</div>
@@ -985,6 +996,52 @@
                 }
             } catch(e) {
                 container.innerHTML = '<div style="font-size:12px;color:#c25b28;">Error: ' + e + '</div>';
+            }
+        }
+
+        async function checkForUpdate() {
+            const status = document.getElementById('updateStatus');
+            const btn = document.getElementById('updateBtn');
+            btn.textContent = 'Checking...';
+            btn.disabled = true;
+            status.innerHTML = '';
+            try {
+                const result = await window.__TAURI_INTERNALS__.invoke('plugin:updater|check');
+                if (result && result.available) {
+                    btn.textContent = 'Check for Updates';
+                    btn.disabled = false;
+                    status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(90,158,111,0.08);border:1px solid rgba(90,158,111,0.15);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#5a9e6f;">v${result.version} available</div>
+                            <div style="font-size:11px;color:#a09890;margin-top:2px;">${result.body || 'New version ready to install'}</div>
+                        </div>
+                        <button class="btn-primary" onclick="installUpdate()" style="white-space:nowrap;">Update Now</button>
+                    </div>`;
+                } else {
+                    btn.textContent = 'Check for Updates';
+                    btn.disabled = false;
+                }
+            } catch(e) {
+                btn.textContent = 'Check for Updates';
+                btn.disabled = false;
+                const msg = String(e);
+                if (msg.includes('valid release')) {
+                    // No release published yet — not an error for users
+                } else {
+                    status.innerHTML = `<div style="margin-top:6px;font-size:11px;color:#a09890;">Unable to check for updates</div>`;
+                }
+            }
+        }
+
+        async function installUpdate() {
+            const status = document.getElementById('updateStatus');
+            status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(194,91,40,0.08);border-radius:8px;font-size:12px;color:#c25b28;">Downloading and installing...</div>`;
+            try {
+                await window.__TAURI_INTERNALS__.invoke('plugin:updater|download_and_install');
+                status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(90,158,111,0.08);border-radius:8px;font-size:12px;color:#5a9e6f;">Restarting...</div>`;
+                await window.__TAURI_INTERNALS__.invoke('plugin:process|restart');
+            } catch(e) {
+                status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(194,91,40,0.08);border-radius:8px;font-size:11px;color:#c25b28;">Update failed: ${String(e).slice(0,60)}</div>`;
             }
         }
 
