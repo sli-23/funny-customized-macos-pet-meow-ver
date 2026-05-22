@@ -91,7 +91,7 @@
             position: relative;
             background: white;
             border: 3px solid black;
-            padding: 6px 10px;
+            padding: 0;
             margin-left: 12px;
             font-family: monospace;
             font-size: 13px;
@@ -100,14 +100,20 @@
             transition: transform 0.1s;
             max-width: 250px;
             min-width: 40px;
-            max-height: 80px;
             overflow: visible;
+            image-rendering: pixelated;
+        }
+        .pixel-bubble-inner {
+            padding: 6px 10px;
+            max-height: 72px;
+            overflow-y: auto;
             word-wrap: break-word;
             overflow-wrap: break-word;
             white-space: pre-wrap;
             line-height: 1.4;
-            image-rendering: pixelated;
         }
+        .pixel-bubble-inner::-webkit-scrollbar { width: 3px; }
+        .pixel-bubble-inner::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
         /* Pixel staircase tail pointing left toward pet */
         .pixel-bubble::before,
         .pixel-bubble::after { content: ''; position: absolute; }
@@ -324,7 +330,7 @@
 
             show(text, opts) {
                 const cls = (opts && opts.cls) ? ' ' + opts.cls : '';
-                bubbleEl.innerHTML = `<div class="pixel-bubble${cls}">${escapeHtml(text)}</div>`;
+                bubbleEl.innerHTML = `<div class="pixel-bubble${cls}"><div class="pixel-bubble-inner">${escapeHtml(text)}</div></div>`;
                 bubbleEl.classList.remove('pop');
                 bubbleEl.classList.add('show');
                 if (opts && opts.animate) {

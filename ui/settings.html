@@ -880,12 +880,14 @@
                     </div>`;
                 }
                 if (hasIssues) {
-                    html += `<div style="font-size:11px;color:#a09890;margin-top:10px;line-height:1.6;padding:8px;background:rgba(0,0,0,0.03);border-radius:6px;">
+                    html += `<div style="font-size:11px;color:#a09890;margin-top:10px;line-height:1.8;padding:10px;background:rgba(0,0,0,0.03);border-radius:6px;">
                         <b style="color:#c25b28;">How to fix:</b><br>
                         1. Click "Fix" to open System Settings<br>
-                        2. Find <b>ClaudeMeow</b> (or the terminal running it) in the list<br>
-                        3. Toggle it ON<br>
-                        4. Restart ClaudeMeow
+                        2. If running via terminal (<code>cargo run</code>): add your <b>Terminal/iTerm2</b> app<br>
+                        &nbsp;&nbsp;&nbsp;If running as .app: add <b>ClaudeMeow</b><br>
+                        3. Toggle it ON (you may need to click + to add it first)<br>
+                        4. Restart ClaudeMeow<br><br>
+                        <b>For Browser URL:</b> also go to Automation and allow your terminal to control <b>Google Chrome</b>
                     </div>`;
                 }
                 container.innerHTML = html;

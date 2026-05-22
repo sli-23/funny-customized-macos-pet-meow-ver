@@ -9,11 +9,22 @@ use tauri::{Emitter, Manager, State};
 use tokio::sync::RwLock;
 
 fn dev_log(app: &tauri::AppHandle, tag: &str, tag_class: &str, msg: &str) {
+    // Always emit — the dev console listens regardless of whether it's visible
     let _ = app.emit("dev-log", serde_json::json!({
         "tag": tag,
         "tag_class": tag_class,
         "message": msg,
     }));
+}
+
+fn is_dev_mode(app: &tauri::AppHandle) -> bool {
+    // Check if dev console window is visible OR config has dev_mode on
+    use tauri::Manager;
+    let config_on = crate::config::load_config().dev_mode;
+    let window_visible = app.get_webview_window("dev")
+        .map(|w| w.is_visible().unwrap_or(false))
+        .unwrap_or(false);
+    config_on || window_visible
 }
 
 pub struct RuntimeState {
@@ -250,7 +261,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
 
             let raw_window_info = crate::modules::activity::get_active_window();
             let window_info = raw_window_info.trim_end_matches(" -").trim_end_matches(" - ").trim().to_string();
-            let dev_mode = crate::config::load_config().dev_mode;
+            let dev_mode = is_dev_mode(&app);
 
 
 
