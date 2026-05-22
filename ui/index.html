@@ -101,15 +101,13 @@
             max-width: 250px;
             min-width: 40px;
             max-height: 80px;
-            overflow-y: auto;
+            overflow: visible;
             word-wrap: break-word;
             overflow-wrap: break-word;
             white-space: pre-wrap;
             line-height: 1.4;
             image-rendering: pixelated;
         }
-        .pixel-bubble::-webkit-scrollbar { width: 3px; }
-        .pixel-bubble::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
         /* Pixel staircase tail pointing left toward pet */
         .pixel-bubble::before,
         .pixel-bubble::after { content: ''; position: absolute; }
