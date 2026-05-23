@@ -25,16 +25,59 @@ pub struct ModuleContext {
 /// Lightweight — activity + spotify + user profile (no network, no heavy system calls)
 #[tauri::command]
 pub fn get_activity_context() -> String {
-    let mut parts = vec![activity::get_context()];
-    let spot = spotify::get_context();
-    if !spot.contains("not running") {
-        parts.push(spot);
+    format_activity_context(
+        &activity::get_context(),
+        &spotify::get_context(),
+        &user_profile::get_context(),
+    )
+}
+
+pub(crate) fn format_activity_context(activity: &str, spotify: &str, profile: &str) -> String {
+    let mut parts = vec![activity.to_string()];
+    if !spotify.contains("not running") {
+        parts.push(spotify.to_string());
     }
-    let profile = user_profile::get_context();
     if !profile.is_empty() {
-        parts.push(profile);
+        parts.push(profile.to_string());
     }
     parts.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_activity_context_excludes_spotify_not_running() {
+        let s = format_activity_context("VS Code", "Spotify not running", "");
+        assert!(!s.contains("not running"), "got: {}", s);
+    }
+
+    #[test]
+    fn test_format_activity_context_includes_spotify_when_playing() {
+        let s = format_activity_context("VS Code", "Playing: Lo-fi Beats", "");
+        assert!(s.contains("Playing: Lo-fi Beats"), "got: {}", s);
+    }
+
+    #[test]
+    fn test_format_activity_context_excludes_empty_profile() {
+        let s = format_activity_context("VS Code", "Spotify not running", "");
+        let lines: Vec<&str> = s.lines().collect();
+        assert_eq!(lines.len(), 1);
+    }
+
+    #[test]
+    fn test_format_activity_context_includes_nonempty_profile() {
+        let s = format_activity_context("VS Code", "Spotify not running", "Name: Tom");
+        assert!(s.contains("Name: Tom"), "got: {}", s);
+    }
+
+    #[test]
+    fn test_format_activity_context_joins_with_newlines() {
+        let s = format_activity_context("VS Code", "Playing: Jazz", "Name: Tom");
+        let lines: Vec<&str> = s.lines().collect();
+        assert_eq!(lines.len(), 3);
+    }
 }
 
 /// Heavy — all modules including weather (curl), performance (top), etc.

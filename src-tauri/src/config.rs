@@ -78,22 +78,30 @@ fn migrate(mut config: AppConfig) -> AppConfig {
 }
 
 pub fn load_config() -> AppConfig {
-    let path = config_path();
+    load_config_from(&config_path())
+}
+
+pub(crate) fn load_config_from(path: &PathBuf) -> AppConfig {
     let defaults = AppConfig::default();
     if path.exists() {
-        let data = fs::read_to_string(&path).unwrap_or_default();
+        let data = fs::read_to_string(path).unwrap_or_default();
         let mut config = migrate(serde_json::from_str::<AppConfig>(&data).unwrap_or_default());
         // Always use latest persona from code — user keeps their own settings
         config.persona = defaults.persona;
         config
     } else {
-        save_config(&defaults);
         defaults
     }
 }
 
 pub fn save_config(config: &AppConfig) {
-    let path = config_path();
+    save_config_to(config, &config_path());
+}
+
+pub(crate) fn save_config_to(config: &AppConfig, path: &PathBuf) {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     if let Ok(data) = serde_json::to_string_pretty(config) {
         fs::write(path, data).ok();
     }
@@ -147,6 +155,60 @@ mod tests {
         let json = r#"{"auth_mode": "apikey", "provider": "anthropic"}"#;
         let config = migrate(serde_json::from_str::<AppConfig>(json).unwrap());
         assert_eq!(config.provider, "anthropic");
+    }
+
+    // ── Checkpoint 5: disk I/O via tempdir ───────────────────────────────────
+
+    fn tmp(dir: &tempfile::TempDir) -> PathBuf {
+        dir.path().join("config.json")
+    }
+
+    #[test]
+    fn test_save_config_writes_valid_json() {
+        let dir = tempfile::TempDir::new().unwrap();
+        save_config_to(&AppConfig::default(), &tmp(&dir));
+        let data = fs::read_to_string(tmp(&dir)).unwrap();
+        assert!(serde_json::from_str::<AppConfig>(&data).is_ok());
+    }
+
+    #[test]
+    fn test_load_config_returns_default_if_file_missing() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let config = load_config_from(&tmp(&dir));
+        assert_eq!(config.provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_load_config_returns_default_if_json_invalid() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(tmp(&dir), b"not json").unwrap();
+        let config = load_config_from(&tmp(&dir));
+        assert_eq!(config.provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_load_config_overlays_persona_from_code_defaults() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut saved = AppConfig::default();
+        saved.persona = "custom persona".to_string();
+        save_config_to(&saved, &tmp(&dir));
+        let loaded = load_config_from(&tmp(&dir));
+        // persona is always overridden with the code default
+        assert_eq!(loaded.persona, AppConfig::default().persona);
+    }
+
+    #[test]
+    fn test_save_and_load_roundtrip() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut original = AppConfig::default();
+        original.provider = "openai".to_string();
+        original.openai_api_key = "sk-test".to_string();
+        original.interval_minutes = 7;
+        save_config_to(&original, &tmp(&dir));
+        let loaded = load_config_from(&tmp(&dir));
+        assert_eq!(loaded.provider, "openai");
+        assert_eq!(loaded.openai_api_key, "sk-test");
+        assert_eq!(loaded.interval_minutes, 7);
     }
 }
 
