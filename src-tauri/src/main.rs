@@ -217,8 +217,9 @@ fn main() {
             let data_dir = dirs::data_dir()
                 .unwrap_or_else(|| std::path::PathBuf::from("."))
                 .join("ClaudeMeow");
-            let activity_logger = ActivityLogger::new(data_dir);
+            let activity_logger = ActivityLogger::new(data_dir.clone());
             activity_logger.prune();
+            ai::history::ChatHistory::new(data_dir).prune();
 
             let runtime_state = RuntimeState {
                 event_bus: event_bus.clone(),

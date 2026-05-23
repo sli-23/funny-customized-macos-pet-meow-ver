@@ -1,12 +1,20 @@
 pub mod chat;
+pub mod history;
 pub mod periodic;
 pub mod provider;
 
 use crate::config::AppConfig;
+use std::path::PathBuf;
 use provider::{
     AiProvider, AnthropicProvider, BedrockBearerProvider, BedrockIamProvider, OpenAiProvider,
 };
 use serde_json::json;
+
+pub(crate) fn data_dir() -> PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("ClaudeMeow")
+}
 
 pub fn build_provider(config: &AppConfig) -> Box<dyn AiProvider + Send + Sync> {
     match config.provider.as_str() {
