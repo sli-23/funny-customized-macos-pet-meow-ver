@@ -1,4 +1,4 @@
-use crate::ai::send_to_bedrock;
+use crate::ai::send_to_ai;
 use crate::config::load_config;
 use crate::runtime::commands::RuntimeState;
 use chrono::Timelike;
@@ -21,7 +21,7 @@ pub async fn generate_message(app: tauri::AppHandle, context: String) -> Result<
         context, time_context, pet_context
     );
 
-    send_to_bedrock(&config, &user_prompt, 60, 0.9).await
+    send_to_ai(&config, &user_prompt, 60, 0.9).await
 }
 
 fn local_hour() -> u32 {

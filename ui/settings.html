@@ -409,32 +409,89 @@
         <div class="tab-content active" id="tab-general">
             <div class="content">
                 <div class="section">
-                    <div class="section-title">API Connection</div>
+                    <div class="section-title">AI Provider</div>
+
                     <div class="form-group">
-                        <label>Bedrock API Key</label>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <input type="password" id="apiKey" placeholder="ABSK..." style="flex:1;">
-                            <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
-                        </div>
-                        <div class="test-status" id="testStatus"></div>
+                        <label>Provider</label>
+                        <select id="providerSelect" onchange="updateProviderFields()">
+                            <option value="bedrock_apikey">Amazon Bedrock (API Key)</option>
+                            <option value="bedrock_iam">Amazon Bedrock (IAM Role)</option>
+                            <option value="anthropic">Anthropic (Direct API)</option>
+                            <option value="openai">OpenAI</option>
+                        </select>
                     </div>
-                    <div class="row">
+
+                    <!-- Bedrock fields -->
+                    <div id="bedrockFields">
+                        <div class="form-group" id="bedrockKeyRow">
+                            <label>Bedrock API Key</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="password" id="apiKey" placeholder="ABSK..." style="flex:1;">
+                                <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
+                            </div>
+                            <div class="test-status" id="testStatus"></div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>AWS Region</label>
+                                <select id="region">
+                                    <option value="us-west-2">us-west-2</option>
+                                    <option value="us-east-1">us-east-1</option>
+                                    <option value="eu-west-1">eu-west-1</option>
+                                    <option value="ap-northeast-1">ap-northeast-1</option>
+                                    <option value="ap-southeast-1">ap-southeast-1</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Model</label>
+                                <select id="modelId">
+                                    <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast, default)</option>
+                                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
+                                    <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="bedrockIamNote" class="section-desc" style="display:none;">
+                            Using IAM Role — no API key needed. Credentials are loaded from your AWS CLI profile or environment.
+                        </div>
+                    </div>
+
+                    <!-- Anthropic fields -->
+                    <div id="anthropicFields" style="display:none;">
                         <div class="form-group">
-                            <label>AWS Region</label>
-                            <select id="region">
-                                <option value="us-west-2">us-west-2</option>
-                                <option value="us-east-1">us-east-1</option>
-                                <option value="eu-west-1">eu-west-1</option>
-                                <option value="ap-northeast-1">ap-northeast-1</option>
-                                <option value="ap-southeast-1">ap-southeast-1</option>
-                            </select>
+                            <label>Anthropic API Key</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="password" id="anthropicApiKey" placeholder="sk-ant-..." style="flex:1;">
+                                <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
+                            </div>
+                            <div class="test-status" id="testStatus"></div>
                         </div>
                         <div class="form-group">
                             <label>Model</label>
-                            <select id="modelId">
-                                <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast, default)</option>
-                                <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
-                                <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
+                            <select id="anthropicModelId">
+                                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast, default)</option>
+                                <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                <option value="claude-opus-4-20250514">Claude Opus 4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- OpenAI fields -->
+                    <div id="openaiFields" style="display:none;">
+                        <div class="form-group">
+                            <label>OpenAI API Key</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="password" id="openaiApiKey" placeholder="sk-..." style="flex:1;">
+                                <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
+                            </div>
+                            <div class="test-status" id="testStatus"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Model</label>
+                            <select id="openaiModelId">
+                                <option value="gpt-4o-mini">GPT-4o Mini (fast, default)</option>
+                                <option value="gpt-4o">GPT-4o</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
                             </select>
                         </div>
                     </div>
@@ -718,26 +775,56 @@
             el.classList.add('active');
         }
 
+        function updateProviderFields() {
+            const v = document.getElementById('providerSelect').value;
+            document.getElementById('bedrockFields').style.display =
+                (v === 'bedrock_apikey' || v === 'bedrock_iam') ? '' : 'none';
+            document.getElementById('bedrockKeyRow').style.display =
+                (v === 'bedrock_apikey') ? '' : 'none';
+            document.getElementById('bedrockIamNote').style.display =
+                (v === 'bedrock_iam') ? '' : 'none';
+            document.getElementById('anthropicFields').style.display =
+                (v === 'anthropic') ? '' : 'none';
+            document.getElementById('openaiFields').style.display =
+                (v === 'openai') ? '' : 'none';
+        }
+
         async function testApi() {
-            const status = document.getElementById('testStatus');
-            const btn = document.getElementById('testBtn');
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const region = document.getElementById('region').value;
-            const modelId = document.getElementById('modelId').value.trim();
-            if (!apiKey) { status.textContent = 'Enter an API key first'; status.className = 'test-status error'; return; }
-            if (!modelId) { status.textContent = 'Enter a model ID first'; status.className = 'test-status error'; return; }
-            status.textContent = 'Testing...'; status.className = 'test-status loading';
-            btn.disabled = true;
+            const statusEl = document.getElementById('testStatus');
+            const v = document.getElementById('providerSelect').value;
+            let apiKey, modelId, region;
+
+            if (v === 'anthropic') {
+                apiKey = document.getElementById('anthropicApiKey').value.trim();
+                modelId = document.getElementById('anthropicModelId').value;
+                region = '';
+            } else if (v === 'openai') {
+                apiKey = document.getElementById('openaiApiKey').value.trim();
+                modelId = document.getElementById('openaiModelId').value;
+                region = '';
+            } else {
+                apiKey = document.getElementById('apiKey').value.trim();
+                modelId = document.getElementById('modelId').value;
+                region = document.getElementById('region').value;
+            }
+
+            if (!apiKey && v !== 'bedrock_iam') {
+                statusEl.textContent = 'Enter an API key first';
+                statusEl.className = 'test-status error';
+                return;
+            }
+            statusEl.textContent = 'Testing...'; statusEl.className = 'test-status loading';
             try {
-                await window.__TAURI_INTERNALS__.invoke('test_api', { apiKey, region, modelId });
-                status.textContent = 'Connected! Settings saved.';
-                status.className = 'test-status success';
+                await window.__TAURI_INTERNALS__.invoke('test_api', {
+                    provider: v, apiKey, region, modelId
+                });
+                statusEl.textContent = 'Connected! Settings saved.';
+                statusEl.className = 'test-status success';
                 await saveSettings();
             } catch (e) {
-                status.textContent = 'Failed: ' + String(e).slice(0, 80);
-                status.className = 'test-status error';
+                statusEl.textContent = 'Failed: ' + String(e).slice(0, 80);
+                statusEl.className = 'test-status error';
             }
-            btn.disabled = false;
         }
 
         async function loadSettings() {
@@ -748,30 +835,48 @@
             } catch(e) {}
             try {
                 const config = await window.__TAURI_INTERNALS__.invoke('get_config');
+                document.getElementById('providerSelect').value = config.provider || 'bedrock_apikey';
                 document.getElementById('region').value = config.aws_region;
                 document.getElementById('apiKey').value = config.api_key || '';
                 document.getElementById('modelId').value = config.model_id;
+                document.getElementById('anthropicApiKey').value = config.api_key || '';
+                document.getElementById('anthropicModelId').value = config.anthropic_model_id || 'claude-haiku-4-5-20251001';
+                document.getElementById('openaiApiKey').value = config.openai_api_key || '';
+                document.getElementById('openaiModelId').value = config.openai_model_id || 'gpt-4o-mini';
                 document.getElementById('persona').value = config.persona;
                 document.getElementById('interval').value = config.interval_minutes;
                 document.getElementById('userNickname').value = config.user_nickname || '';
                 document.getElementById('activityEnabled').checked = config.activity_enabled !== false;
                 document.getElementById('devMode').checked = config.dev_mode || false;
+                updateProviderFields();
             } catch (e) {
                 document.getElementById('status').textContent = 'Error loading: ' + e;
             }
         }
 
         async function saveSettings() {
+            const provider = document.getElementById('providerSelect').value;
+            // Use the correct api_key field for the active provider
+            let apiKey = '';
+            if (provider === 'anthropic') {
+                apiKey = document.getElementById('anthropicApiKey').value;
+            } else if (provider !== 'openai') {
+                apiKey = document.getElementById('apiKey').value;
+            }
             const config = {
+                provider,
                 aws_region: document.getElementById('region').value,
                 model_id: document.getElementById('modelId').value,
+                anthropic_model_id: document.getElementById('anthropicModelId').value,
+                openai_api_key: document.getElementById('openaiApiKey').value,
+                openai_model_id: document.getElementById('openaiModelId').value,
                 persona: document.getElementById('persona').value,
                 interval_minutes: parseInt(document.getElementById('interval').value),
                 nicknames: [],
                 activity_enabled: document.getElementById('activityEnabled').checked,
                 dev_mode: document.getElementById('devMode').checked,
                 auth_mode: 'apikey',
-                api_key: document.getElementById('apiKey').value,
+                api_key: apiKey,
                 user_nickname: document.getElementById('userNickname').value.trim(),
             };
             try {

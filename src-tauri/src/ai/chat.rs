@@ -1,4 +1,4 @@
-use crate::ai::send_to_bedrock;
+use crate::ai::send_to_ai;
 use crate::config::{load_config, AppConfig};
 use crate::modules;
 
@@ -21,5 +21,5 @@ pub async fn chat_message(user_text: String) -> Result<String, String> {
 
     let user_prompt = format!("User says: {}", user_text);
 
-    send_to_bedrock(&chat_config, &user_prompt, 200, 0.8).await
+    send_to_ai(&chat_config, &user_prompt, 200, 0.8).await
 }
