@@ -585,13 +585,84 @@
                 <div class="section">
                     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
                         <span>Modules</span>
-                        <button class="btn-secondary" onclick="refreshModules()" id="refreshBtn">Refresh</button>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn-secondary" onclick="showCreateForm()" id="createBtn">+ Create</button>
+                            <button class="btn-secondary" onclick="refreshModules()" id="refreshBtn">Refresh</button>
+                        </div>
                     </div>
-                    <div class="section-desc">Drop module folders into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">modules/</code> and click Refresh to load them.</div>
+                    <div class="section-desc">Drop module folders into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">modules/</code> or use Create to build one in-app.</div>
                     <div id="moduleList">
                         <div class="ext-card" style="justify-content:center;opacity:0.5;">
                             <div class="ext-desc">Loading modules...</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Create Module Form -->
+                <div class="section" id="createModuleForm" style="display:none;">
+                    <div class="section-title">New Module</div>
+                    <div class="row">
+                        <div class="form-group" style="flex:3;">
+                            <label>Module Name</label>
+                            <input type="text" id="newModName" placeholder="My Module">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Icon</label>
+                            <input type="text" id="newModIcon" placeholder="🐱" maxlength="4" style="text-align:center;font-size:18px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="newModDesc" placeholder="What does this module react to?">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Trigger Event</label>
+                            <select id="newModEvent" onchange="updateConditionFields()">
+                                <option value="active_app_changed">Active App Changed</option>
+                                <option value="browser_url_changed">Browser URL Changed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Condition Field</label>
+                            <select id="newModCondField">
+                                <option value="app_name">App Name</option>
+                                <option value="window_title">Window Title</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Match Type</label>
+                            <select id="newModCondType">
+                                <option value="contains">Contains</option>
+                                <option value="equals">Equals</option>
+                                <option value="not_contains">Does Not Contain</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Value</label>
+                            <input type="text" id="newModCondVal" placeholder="e.g. Slack">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Messages (one per line — one is picked randomly)</label>
+                        <textarea id="newModMessages" placeholder="摸鱼呢！🐟&#10;Slack中！加油～" style="height:80px;"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Priority (1–10)</label>
+                            <input type="number" id="newModPriority" value="5" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Cooldown (minutes)</label>
+                            <input type="number" id="newModCooldown" value="10" min="1" max="120">
+                        </div>
+                    </div>
+                    <div class="test-status" id="createStatus"></div>
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <button class="btn-primary" onclick="saveNewModule()">Save & Load</button>
+                        <button class="btn-secondary" onclick="hideCreateForm()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -907,30 +978,75 @@
 
         function renderModules(modules) {
             const container = document.getElementById('moduleList');
+            container.textContent = '';
             if (!modules || modules.length === 0) {
-                container.innerHTML = '<div class="ext-card" style="justify-content:center;opacity:0.5;"><div class="ext-desc">No modules found in modules/ folder</div></div>';
+                const empty = document.createElement('div');
+                empty.className = 'ext-card';
+                empty.style.cssText = 'justify-content:center;opacity:0.5;';
+                empty.textContent = 'No modules found. Click + Create to make one.';
+                container.appendChild(empty);
                 return;
             }
-
-            let html = '';
             for (const m of modules) {
-                const statusClass = m.status === 'active' ? 'active' : m.status === 'error' ? 'error' : 'disabled';
-                const statusText = m.status === 'active' ? 'Active' : m.status === 'error' ? 'Error' : 'Disabled';
-                const toggleChecked = m.status === 'active' ? 'checked' : '';
-                const isError = m.status === 'error';
+                const card = document.createElement('div');
+                card.className = 'ext-card';
 
-                html += `<div class="ext-card">
-                    <div class="ext-icon" style="background: rgba(194,91,40,0.08);">${m.icon || '📦'}</div>
-                    <div class="ext-info">
-                        <div class="ext-name">${escHtml(m.name)} <span style="font-size:10px;color:#888;font-weight:400;">v${escHtml(m.version)}</span></div>
-                        <div class="ext-desc">${escHtml(m.description)} · ${m.reaction_count} reactions</div>
-                        ${m.error ? '<div style="font-size:10px;color:#c25b28;margin-top:2px;">' + escHtml(m.error) + '</div>' : ''}
-                    </div>
-                    ${isError ? '<span class="ext-badge" style="background:rgba(194,91,40,0.1);color:#c25b28;">Error</span>' :
-                    '<label class="toggle" style="margin:0;"><input type="checkbox" ' + toggleChecked + ' onchange="toggleMod(\'' + escHtml(m.id) + '\', this.checked)"></label>'}
-                </div>`;
+                const icon = document.createElement('div');
+                icon.className = 'ext-icon';
+                icon.style.background = 'rgba(194,91,40,0.08)';
+                icon.textContent = m.icon || '📦';
+                card.appendChild(icon);
+
+                const info = document.createElement('div');
+                info.className = 'ext-info';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'ext-name';
+                nameEl.textContent = m.name + ' ';
+                const ver = document.createElement('span');
+                ver.style.cssText = 'font-size:10px;color:#888;font-weight:400;';
+                ver.textContent = 'v' + m.version;
+                nameEl.appendChild(ver);
+                info.appendChild(nameEl);
+                const desc = document.createElement('div');
+                desc.className = 'ext-desc';
+                desc.textContent = (m.description || '') + ' · ' + m.reaction_count + ' reactions';
+                info.appendChild(desc);
+                if (m.error) {
+                    const err = document.createElement('div');
+                    err.style.cssText = 'font-size:10px;color:#c25b28;margin-top:2px;';
+                    err.textContent = m.error;
+                    info.appendChild(err);
+                }
+                card.appendChild(info);
+
+                if (!m.builtin) {
+                    const del = document.createElement('button');
+                    del.textContent = '🗑';
+                    del.title = 'Delete module';
+                    del.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.5;';
+                    del.addEventListener('click', () => deleteUserMod(m.id));
+                    card.appendChild(del);
+                }
+
+                if (m.status === 'error') {
+                    const badge = document.createElement('span');
+                    badge.className = 'ext-badge';
+                    badge.style.cssText = 'background:rgba(194,91,40,0.1);color:#c25b28;';
+                    badge.textContent = 'Error';
+                    card.appendChild(badge);
+                } else {
+                    const lbl = document.createElement('label');
+                    lbl.className = 'toggle';
+                    lbl.style.margin = '0';
+                    const chk = document.createElement('input');
+                    chk.type = 'checkbox';
+                    chk.checked = m.status === 'active';
+                    chk.addEventListener('change', () => toggleMod(m.id, chk.checked));
+                    lbl.appendChild(chk);
+                    card.appendChild(lbl);
+                }
+                container.appendChild(card);
             }
-            container.innerHTML = html;
         }
 
         async function refreshModules() {
@@ -952,6 +1068,75 @@
                 await window.__TAURI_INTERNALS__.invoke('toggle_module', { id, enabled });
             } catch(e) {
                 console.error('toggleModule error:', e);
+            }
+        }
+
+        function showCreateForm() {
+            document.getElementById('createModuleForm').style.display = '';
+            document.getElementById('createStatus').textContent = '';
+            document.getElementById('newModName').focus();
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createModuleForm').style.display = 'none';
+        }
+
+        function updateConditionFields() {
+            const event = document.getElementById('newModEvent').value;
+            const fieldSel = document.getElementById('newModCondField');
+            while (fieldSel.options.length) fieldSel.remove(0);
+            const opts = event === 'browser_url_changed'
+                ? [['site','Site'],['title','URL']]
+                : [['app_name','App Name'],['window_title','Window Title']];
+            opts.forEach(([val, label]) => fieldSel.add(new Option(label, val)));
+        }
+
+        async function saveNewModule() {
+            const statusEl = document.getElementById('createStatus');
+            const name = document.getElementById('newModName').value.trim();
+            const icon = document.getElementById('newModIcon').value.trim() || '📦';
+            const description = document.getElementById('newModDesc').value.trim();
+            const event = document.getElementById('newModEvent').value;
+            const conditionField = document.getElementById('newModCondField').value;
+            const conditionType = document.getElementById('newModCondType').value;
+            const conditionValue = document.getElementById('newModCondVal').value.trim();
+            const messages = document.getElementById('newModMessages').value
+                .split('\n').map(m => m.trim()).filter(m => m.length > 0);
+            const priority = parseInt(document.getElementById('newModPriority').value) || 5;
+            const cooldownMinutes = parseInt(document.getElementById('newModCooldown').value) || 10;
+
+            if (!name) { statusEl.textContent = 'Name is required'; statusEl.className = 'test-status error'; return; }
+            if (messages.length === 0) { statusEl.textContent = 'At least one message is required'; statusEl.className = 'test-status error'; return; }
+
+            const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            if (!id) { statusEl.textContent = 'Cannot generate valid ID from name'; statusEl.className = 'test-status error'; return; }
+
+            statusEl.textContent = 'Saving...'; statusEl.className = 'test-status loading';
+            try {
+                const modules = await window.__TAURI_INTERNALS__.invoke('create_module', {
+                    id, name, icon, description, event,
+                    conditionField, conditionType, conditionValue,
+                    messages, priority, cooldownMinutes
+                });
+                renderModules(modules);
+                hideCreateForm();
+                ['newModName','newModIcon','newModDesc','newModCondVal','newModMessages'].forEach(fid => {
+                    document.getElementById(fid).value = '';
+                });
+                statusEl.textContent = '';
+            } catch(e) {
+                statusEl.textContent = 'Error: ' + String(e).slice(0, 100);
+                statusEl.className = 'test-status error';
+            }
+        }
+
+        async function deleteUserMod(id) {
+            if (!confirm('Delete module "' + id + '"? This cannot be undone.')) return;
+            try {
+                const modules = await window.__TAURI_INTERNALS__.invoke('delete_user_module', { id });
+                renderModules(modules);
+            } catch(e) {
+                alert('Failed to delete: ' + e);
             }
         }
 

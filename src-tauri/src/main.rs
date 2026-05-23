@@ -380,6 +380,8 @@ fn main() {
             runtime::commands::get_modules,
             runtime::commands::refresh_modules,
             runtime::commands::toggle_module,
+            runtime::commands::create_module,
+            runtime::commands::delete_user_module,
             runtime::commands::get_activity_log,
             runtime::commands::emit_test_event,
             runtime::commands::log_status_change,
