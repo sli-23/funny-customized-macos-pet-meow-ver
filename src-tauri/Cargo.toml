@@ -15,11 +15,13 @@ rand = "0.8"
 chrono = "0.4"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 urlencoding = "2"
+async-trait = "0.1"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 
 [dev-dependencies]
 tempfile = "3"
+mockall = "0.13"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

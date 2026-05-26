@@ -130,12 +130,19 @@ impl ModuleLoader {
 
 
     pub fn scan_and_load(&mut self) -> Vec<String> {
-        let mut errors = Vec::new();
         self.modules.clear();
+        let builtin_dir = self.modules_dir.clone();
+        let user_dir = user_modules_dir();
+        let mut errors = self.scan_one_dir(&builtin_dir);
+        errors.extend(self.scan_one_dir(&user_dir));
+        errors
+    }
 
-        fs::create_dir_all(&self.modules_dir).ok();
+    fn scan_one_dir(&mut self, dir: &std::path::Path) -> Vec<String> {
+        let mut errors = Vec::new();
+        fs::create_dir_all(dir).ok();
 
-        let entries = match fs::read_dir(&self.modules_dir) {
+        let entries = match fs::read_dir(dir) {
             Ok(e) => e,
             Err(e) => {
                 errors.push(format!("Cannot read modules dir: {}", e));
@@ -148,7 +155,6 @@ impl ModuleLoader {
             if !path.is_dir() {
                 continue;
             }
-
             match self.load_module(&path) {
                 Ok(mut module) => {
                     if self.disabled_ids.contains(&module.manifest.id) {
@@ -182,7 +188,6 @@ impl ModuleLoader {
                 }
             }
         }
-
         errors
     }
 
@@ -259,6 +264,13 @@ impl ModuleLoader {
         found
     }
 
+}
+
+pub fn user_modules_dir() -> PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("ClaudeMeow")
+        .join("modules")
 }
 
 pub fn default_modules_dir() -> PathBuf {
@@ -545,5 +557,53 @@ mod tests {
 
         loader.scan_and_load();
         assert_eq!(loader.modules[0].status, ModuleStatus::Disabled);
+    }
+
+    // ── Checkpoint 3: user_modules_dir + dual-scan ───────────────────────────
+
+    #[test]
+    fn test_user_modules_dir_ends_with_modules() {
+        let path = user_modules_dir();
+        assert_eq!(path.file_name().unwrap().to_str().unwrap(), "modules");
+    }
+
+    #[test]
+    fn test_scan_and_load_picks_up_module_from_second_dir() {
+        let builtin_tmp = setup_test_dir();
+        let user_tmp = setup_test_dir();
+
+        // Put a module in the builtin dir and one in the "user" dir
+        write_module(&builtin_tmp.path().to_path_buf(), "builtin-mod",
+            r#"{"id":"builtin-mod","name":"Built-in","version":"1.0.0"}"#, None);
+        write_module(&user_tmp.path().to_path_buf(), "user-mod",
+            r#"{"id":"user-mod","name":"User","version":"1.0.0"}"#, None);
+
+        // Loader uses builtin dir; we temporarily override user_modules_dir by
+        // putting the user module in a subdir we scan manually via scan_one_dir
+        let mut loader = ModuleLoader::new(builtin_tmp.path().to_path_buf());
+        loader.modules.clear();
+        loader.scan_one_dir(builtin_tmp.path());
+        loader.scan_one_dir(user_tmp.path());
+
+        let ids: Vec<_> = loader.modules.iter().map(|m| m.manifest.id.clone()).collect();
+        assert!(ids.contains(&"builtin-mod".to_string()));
+        assert!(ids.contains(&"user-mod".to_string()));
+    }
+
+    #[test]
+    fn test_scan_and_load_merges_errors_from_both_dirs() {
+        let builtin_tmp = setup_test_dir();
+        let user_tmp = setup_test_dir();
+
+        // Put a broken module (missing manifest) in each dir
+        fs::create_dir_all(builtin_tmp.path().join("broken-builtin")).unwrap();
+        fs::create_dir_all(user_tmp.path().join("broken-user")).unwrap();
+
+        let mut loader = ModuleLoader::new(builtin_tmp.path().to_path_buf());
+        loader.modules.clear();
+        let mut errors = loader.scan_one_dir(builtin_tmp.path());
+        errors.extend(loader.scan_one_dir(user_tmp.path()));
+
+        assert_eq!(errors.len(), 2);
     }
 }

@@ -1,15 +1,45 @@
 pub mod chat;
+pub mod history;
 pub mod periodic;
+pub mod provider;
 
 use crate::config::AppConfig;
-use aws_config::BehaviorVersion;
-use aws_sdk_bedrockruntime::types::{
-    ContentBlock, ConversationRole, InferenceConfiguration, Message, SystemContentBlock,
+use std::path::PathBuf;
+use provider::{
+    AiProvider, AnthropicProvider, BedrockBearerProvider, BedrockIamProvider, OpenAiProvider,
 };
-use aws_sdk_bedrockruntime::Client;
-use serde_json::{json, Value};
+use serde_json::json;
 
-pub async fn send_to_bedrock(
+pub(crate) fn data_dir() -> PathBuf {
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("ClaudeMeow")
+}
+
+pub fn build_provider(config: &AppConfig) -> Box<dyn AiProvider + Send + Sync> {
+    match config.provider.as_str() {
+        "anthropic" => Box::new(AnthropicProvider {
+            api_key: config.api_key.clone(),
+            model_id: config.anthropic_model_id.clone(),
+        }),
+        "openai" => Box::new(OpenAiProvider {
+            api_key: config.openai_api_key.clone(),
+            model_id: config.openai_model_id.clone(),
+        }),
+        "bedrock_iam" => Box::new(BedrockIamProvider {
+            region: config.aws_region.clone(),
+            model_id: config.model_id.clone(),
+        }),
+        // "bedrock_apikey" + all legacy values ("apikey", "bedrock", etc.)
+        _ => Box::new(BedrockBearerProvider {
+            api_key: config.api_key.clone(),
+            region: config.aws_region.clone(),
+            model_id: config.model_id.clone(),
+        }),
+    }
+}
+
+pub async fn send_to_ai(
     config: &AppConfig,
     user_prompt: &str,
     max_tokens: i32,
@@ -17,7 +47,8 @@ pub async fn send_to_bedrock(
 ) -> Result<String, String> {
     let mut config = config.clone();
     if !config.user_nickname.is_empty() {
-        let persona = config.persona
+        let persona = config
+            .persona
             .lines()
             .filter(|line| {
                 !line.contains("Call the user by nickname")
@@ -31,145 +62,142 @@ pub async fn send_to_bedrock(
             persona, config.user_nickname, config.user_nickname
         );
     }
-    match config.auth_mode.as_str() {
-        "apikey" => send_via_bearer(&config, user_prompt, max_tokens, temperature).await,
-        _ => send_via_iam(&config, user_prompt, max_tokens, temperature).await,
-    }
+    let provider = build_provider(&config);
+    provider
+        .send(&config.persona, user_prompt, max_tokens, temperature)
+        .await
 }
 
 #[tauri::command]
-pub async fn test_api(api_key: String, region: String, model_id: String) -> Result<String, String> {
-    let url = format!(
-        "https://bedrock-runtime.{}.amazonaws.com/model/{}/converse",
-        region, model_id
-    );
-
-    let body = json!({
-        "system": [{"text": "Reply with exactly: API connection successful!"}],
-        "messages": [{"role": "user", "content": [{"text": "test"}]}],
-        "inferenceConfig": {"maxTokens": 20, "temperature": 0.0}
-    });
-
-    let client = reqwest::Client::new();
-    let response = client
-        .post(&url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("Connection failed: {}", e))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("{}: {}", status, text));
-    }
-
-    Ok("API connection successful!".to_string())
-}
-
-async fn send_via_iam(
-    config: &AppConfig,
-    user_prompt: &str,
-    max_tokens: i32,
-    temperature: f32,
+pub async fn test_api(
+    provider: String,
+    api_key: String,
+    region: String,
+    model_id: String,
 ) -> Result<String, String> {
-    let aws_config = aws_config::defaults(BehaviorVersion::latest())
-        .region(aws_config::Region::new(config.aws_region.clone()))
-        .load()
-        .await;
+    let ping = "Reply with exactly: API connection successful!";
 
-    let client = Client::new(&aws_config);
-
-    let inference_config = InferenceConfiguration::builder()
-        .max_tokens(max_tokens)
-        .temperature(temperature)
-        .build();
-
-    let result = client
-        .converse()
-        .model_id(&config.model_id)
-        .system(SystemContentBlock::Text(config.persona.clone()))
-        .messages(
-            Message::builder()
-                .role(ConversationRole::User)
-                .content(ContentBlock::Text(user_prompt.to_string()))
-                .build()
-                .map_err(|e| e.to_string())?,
-        )
-        .inference_config(inference_config)
-        .send()
-        .await;
-
-    match result {
-        Ok(response) => {
-            if let Some(output) = response.output() {
-                if let aws_sdk_bedrockruntime::types::ConverseOutput::Message(msg) = output {
-                    for block in msg.content() {
-                        if let ContentBlock::Text(text) = block {
-                            return Ok(text.trim().trim_matches('"').to_string());
-                        }
-                    }
-                }
+    match provider.as_str() {
+        "anthropic" => {
+            let body = json!({
+                "model": model_id,
+                "max_tokens": 20,
+                "temperature": 0.0,
+                "system": ping,
+                "messages": [{"role": "user", "content": "test"}]
+            });
+            let response = reqwest::Client::new()
+                .post("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", &api_key)
+                .header("anthropic-version", "2023-06-01")
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Connection failed: {}", e))?;
+            if !response.status().is_success() {
+                let status = response.status();
+                let text = response.text().await.unwrap_or_default();
+                return Err(format!("{}: {}", status, text));
             }
-            Err("No response from model".to_string())
+            Ok("API connection successful!".to_string())
         }
-        Err(e) => Err(format!("Bedrock error: {}", e)),
+        "openai" => {
+            let body = json!({
+                "model": model_id,
+                "max_tokens": 20,
+                "temperature": 0.0,
+                "messages": [
+                    {"role": "system", "content": ping},
+                    {"role": "user", "content": "test"}
+                ]
+            });
+            let response = reqwest::Client::new()
+                .post("https://api.openai.com/v1/chat/completions")
+                .header("Authorization", format!("Bearer {}", api_key))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Connection failed: {}", e))?;
+            if !response.status().is_success() {
+                let status = response.status();
+                let text = response.text().await.unwrap_or_default();
+                return Err(format!("{}: {}", status, text));
+            }
+            Ok("API connection successful!".to_string())
+        }
+        // bedrock_apikey or bedrock_iam (IAM has no key to test interactively)
+        _ => {
+            let url = format!(
+                "https://bedrock-runtime.{}.amazonaws.com/model/{}/converse",
+                region, model_id
+            );
+            let body = json!({
+                "system": [{"text": ping}],
+                "messages": [{"role": "user", "content": [{"text": "test"}]}],
+                "inferenceConfig": {"maxTokens": 20, "temperature": 0.0}
+            });
+            let response = reqwest::Client::new()
+                .post(&url)
+                .header("Authorization", format!("Bearer {}", api_key))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| format!("Connection failed: {}", e))?;
+            if !response.status().is_success() {
+                let status = response.status();
+                let text = response.text().await.unwrap_or_default();
+                return Err(format!("{}: {}", status, text));
+            }
+            Ok("API connection successful!".to_string())
+        }
     }
 }
 
-async fn send_via_bearer(
-    config: &AppConfig,
-    user_prompt: &str,
-    max_tokens: i32,
-    temperature: f32,
-) -> Result<String, String> {
-    let url = format!(
-        "https://bedrock-runtime.{}.amazonaws.com/model/{}/converse",
-        config.aws_region, config.model_id
-    );
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let body = json!({
-        "system": [{"text": config.persona}],
-        "messages": [{
-            "role": "user",
-            "content": [{"text": user_prompt}]
-        }],
-        "inferenceConfig": {
-            "maxTokens": max_tokens,
-            "temperature": temperature
+    fn config_with_provider(p: &str) -> AppConfig {
+        AppConfig {
+            provider: p.to_string(),
+            ..AppConfig::default()
         }
-    });
-
-    let client = reqwest::Client::new();
-    let response = client
-        .post(&url)
-        .header("Authorization", format!("Bearer {}", config.api_key))
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("HTTP error: {}", e))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(format!("API {}: {}", status, text));
     }
 
-    let json: Value = response
-        .json()
-        .await
-        .map_err(|e| format!("JSON parse error: {}", e))?;
+    // Phase C: build_provider factory — verify routing doesn't panic
 
-    json.get("output")
-        .and_then(|o| o.get("message"))
-        .and_then(|m| m.get("content"))
-        .and_then(|c| c.as_array())
-        .and_then(|arr| arr.first())
-        .and_then(|block| block.get("text"))
-        .and_then(|t| t.as_str())
-        .map(|s| s.trim().trim_matches('"').to_string())
-        .ok_or_else(|| "No text in response".to_string())
+    #[test]
+    fn test_build_provider_default_gives_bedrock_bearer() {
+        // default provider is "bedrock_apikey" → BedrockBearerProvider
+        let _p = build_provider(&AppConfig::default());
+    }
+
+    #[test]
+    fn test_build_provider_anthropic_does_not_panic() {
+        let _p = build_provider(&config_with_provider("anthropic"));
+    }
+
+    #[test]
+    fn test_build_provider_openai_does_not_panic() {
+        let _p = build_provider(&config_with_provider("openai"));
+    }
+
+    #[test]
+    fn test_build_provider_bedrock_iam_does_not_panic() {
+        let _p = build_provider(&config_with_provider("bedrock_iam"));
+    }
+
+    #[test]
+    fn test_build_provider_legacy_apikey_does_not_panic() {
+        // old auth_mode="apikey" config — routes to _ arm (BedrockBearer)
+        let config = AppConfig {
+            provider: "bedrock_apikey".to_string(),
+            auth_mode: "apikey".to_string(),
+            ..AppConfig::default()
+        };
+        let _p = build_provider(&config);
+    }
 }

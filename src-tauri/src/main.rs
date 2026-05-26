@@ -217,8 +217,9 @@ fn main() {
             let data_dir = dirs::data_dir()
                 .unwrap_or_else(|| std::path::PathBuf::from("."))
                 .join("ClaudeMeow");
-            let activity_logger = ActivityLogger::new(data_dir);
+            let activity_logger = ActivityLogger::new(data_dir.clone());
             activity_logger.prune();
+            ai::history::ChatHistory::new(data_dir).prune();
 
             let runtime_state = RuntimeState {
                 event_bus: event_bus.clone(),
@@ -379,6 +380,8 @@ fn main() {
             runtime::commands::get_modules,
             runtime::commands::refresh_modules,
             runtime::commands::toggle_module,
+            runtime::commands::create_module,
+            runtime::commands::delete_user_module,
             runtime::commands::get_activity_log,
             runtime::commands::emit_test_event,
             runtime::commands::log_status_change,

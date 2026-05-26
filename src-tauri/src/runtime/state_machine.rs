@@ -77,15 +77,6 @@ impl StateMachine {
     }
 
     #[cfg(test)]
-    pub fn with_stats(event_bus: EventBus, stats: PetStats) -> Self {
-        Self {
-            state: Arc::new(RwLock::new(PetState::Idle)),
-            stats: Arc::new(RwLock::new(stats)),
-            event_bus,
-        }
-    }
-
-    #[cfg(test)]
     pub async fn current_state(&self) -> PetState {
         self.state.read().await.clone()
     }

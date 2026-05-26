@@ -15,6 +15,10 @@ pub struct AppConfig {
     pub api_key: String,
     pub user_nickname: String,
     pub dev_mode: bool,
+    pub provider: String,
+    pub openai_api_key: String,
+    pub anthropic_model_id: String,
+    pub openai_model_id: String,
 }
 
 impl Default for AppConfig {
@@ -47,6 +51,10 @@ Format: "hooman, drink water~" or "铲屎官, 坐直啦！" — never use colon 
             api_key: String::new(),
             user_nickname: String::new(),
             dev_mode: false,
+            provider: "bedrock_apikey".to_string(),
+            openai_api_key: String::new(),
+            anthropic_model_id: "claude-haiku-4-5-20251001".to_string(),
+            openai_model_id: "gpt-4o-mini".to_string(),
         }
     }
 }
@@ -59,23 +67,41 @@ fn config_path() -> PathBuf {
     config_dir.join("config.json")
 }
 
+fn migrate(mut config: AppConfig) -> AppConfig {
+    // Legacy auth_mode="bedrock" maps to bedrock_iam. Only apply when the user hasn't
+    // explicitly chosen a non-Bedrock provider (serde fills provider with its default).
+    let is_new_provider = matches!(config.provider.as_str(), "anthropic" | "openai" | "bedrock_iam");
+    if config.auth_mode == "bedrock" && !is_new_provider {
+        config.provider = "bedrock_iam".to_string();
+    }
+    config
+}
+
 pub fn load_config() -> AppConfig {
-    let path = config_path();
+    load_config_from(&config_path())
+}
+
+pub(crate) fn load_config_from(path: &PathBuf) -> AppConfig {
     let defaults = AppConfig::default();
     if path.exists() {
-        let data = fs::read_to_string(&path).unwrap_or_default();
-        let mut config: AppConfig = serde_json::from_str(&data).unwrap_or_default();
+        let data = fs::read_to_string(path).unwrap_or_default();
+        let mut config = migrate(serde_json::from_str::<AppConfig>(&data).unwrap_or_default());
         // Always use latest persona from code — user keeps their own settings
         config.persona = defaults.persona;
         config
     } else {
-        save_config(&defaults);
         defaults
     }
 }
 
 pub fn save_config(config: &AppConfig) {
-    let path = config_path();
+    save_config_to(config, &config_path());
+}
+
+pub(crate) fn save_config_to(config: &AppConfig, path: &PathBuf) {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).ok();
+    }
     if let Ok(data) = serde_json::to_string_pretty(config) {
         fs::write(path, data).ok();
     }
@@ -84,6 +110,106 @@ pub fn save_config(config: &AppConfig) {
 #[tauri::command]
 pub fn get_config() -> AppConfig {
     load_config()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Phase B: config field defaults and migration
+
+    #[test]
+    fn test_default_provider_is_bedrock_apikey() {
+        assert_eq!(AppConfig::default().provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_default_anthropic_model_id() {
+        assert_eq!(
+            AppConfig::default().anthropic_model_id,
+            "claude-haiku-4-5-20251001"
+        );
+    }
+
+    #[test]
+    fn test_default_openai_model_id() {
+        assert_eq!(AppConfig::default().openai_model_id, "gpt-4o-mini");
+    }
+
+    #[test]
+    fn test_migration_auth_mode_apikey_becomes_bedrock_apikey() {
+        let json = r#"{"auth_mode": "apikey"}"#;
+        let config = migrate(serde_json::from_str::<AppConfig>(json).unwrap());
+        assert_eq!(config.provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_migration_auth_mode_bedrock_becomes_bedrock_iam() {
+        let json = r#"{"auth_mode": "bedrock"}"#;
+        let config = migrate(serde_json::from_str::<AppConfig>(json).unwrap());
+        assert_eq!(config.provider, "bedrock_iam");
+    }
+
+    #[test]
+    fn test_new_provider_field_not_overwritten_by_migration() {
+        let json = r#"{"auth_mode": "apikey", "provider": "anthropic"}"#;
+        let config = migrate(serde_json::from_str::<AppConfig>(json).unwrap());
+        assert_eq!(config.provider, "anthropic");
+    }
+
+    // ── Checkpoint 5: disk I/O via tempdir ───────────────────────────────────
+
+    fn tmp(dir: &tempfile::TempDir) -> PathBuf {
+        dir.path().join("config.json")
+    }
+
+    #[test]
+    fn test_save_config_writes_valid_json() {
+        let dir = tempfile::TempDir::new().unwrap();
+        save_config_to(&AppConfig::default(), &tmp(&dir));
+        let data = fs::read_to_string(tmp(&dir)).unwrap();
+        assert!(serde_json::from_str::<AppConfig>(&data).is_ok());
+    }
+
+    #[test]
+    fn test_load_config_returns_default_if_file_missing() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let config = load_config_from(&tmp(&dir));
+        assert_eq!(config.provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_load_config_returns_default_if_json_invalid() {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(tmp(&dir), b"not json").unwrap();
+        let config = load_config_from(&tmp(&dir));
+        assert_eq!(config.provider, "bedrock_apikey");
+    }
+
+    #[test]
+    fn test_load_config_overlays_persona_from_code_defaults() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut saved = AppConfig::default();
+        saved.persona = "custom persona".to_string();
+        save_config_to(&saved, &tmp(&dir));
+        let loaded = load_config_from(&tmp(&dir));
+        // persona is always overridden with the code default
+        assert_eq!(loaded.persona, AppConfig::default().persona);
+    }
+
+    #[test]
+    fn test_save_and_load_roundtrip() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let mut original = AppConfig::default();
+        original.provider = "openai".to_string();
+        original.openai_api_key = "sk-test".to_string();
+        original.interval_minutes = 7;
+        save_config_to(&original, &tmp(&dir));
+        let loaded = load_config_from(&tmp(&dir));
+        assert_eq!(loaded.provider, "openai");
+        assert_eq!(loaded.openai_api_key, "sk-test");
+        assert_eq!(loaded.interval_minutes, 7);
+    }
 }
 
 #[tauri::command]
