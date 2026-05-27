@@ -795,16 +795,26 @@ async function loadCrIntelligence() {
     const panel = document.getElementById('crIntelPanel');
     if (!panel) return;
     try {
-        const [stats, history] = await Promise.all([
+        const [stats, activity] = await Promise.all([
             window.__TAURI_INTERNALS__.invoke('get_team_stats').catch(() => null),
-            window.__TAURI_INTERNALS__.invoke('get_gossip_history').catch(() => ({ week_start: '', commented_ids: [] })),
+            window.__TAURI_INTERNALS__.invoke('get_team_activity').catch(() => null),
         ]);
 
         let html = '';
 
         if (stats && stats.teammates) {
+            // ── Leaderboard (first) ──
+            const comp = stats.comparisons || {};
+            html += '<div class="cr-leaderboard">';
+            if (comp.most_commits) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🏆</span><span class="cr-leader-label">Most Active</span><span class="cr-leader-value">' + escHtml(comp.most_commits) + '</span></div>';
+            if (comp.quietest) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🐟</span><span class="cr-leader-label">Quietest</span><span class="cr-leader-value">' + escHtml(comp.quietest) + '</span></div>';
+            if (comp.biggest_single_cr) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🚀</span><span class="cr-leader-label">Biggest PR</span><span class="cr-leader-value">' + escHtml(comp.biggest_single_cr.author) + ' (' + comp.biggest_single_cr.files + ')</span></div>';
+            if (comp.longest_streak) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🔥</span><span class="cr-leader-label">Streak</span><span class="cr-leader-value">' + escHtml(comp.longest_streak.author) + ' (' + comp.longest_streak.days + 'd)</span></div>';
+            html += '</div>';
+
+            // ── Team Stats Cards ──
             const updated = stats.last_updated ? new Date(stats.last_updated).toLocaleString() : '—';
-            html += '<div class="cr-intel-header">Team Stats <span style="font-weight:400;color:var(--text-muted);">· Updated ' + escHtml(updated) + '</span></div>';
+            html += '<div class="cr-intel-header" style="margin-top:16px;">Team Stats <span style="font-weight:400;color:var(--text-muted);">· Updated ' + escHtml(updated) + '</span></div>';
             html += '<div class="cr-intel-grid">';
             const entries = Object.entries(stats.teammates).sort((a, b) => (b[1].total_crs || 0) - (a[1].total_crs || 0));
             for (const [alias, s] of entries) {
@@ -821,28 +831,45 @@ async function loadCrIntelligence() {
             }
             html += '</div>';
 
-            if (stats.comparisons) {
-                html += '<div class="cr-intel-comparisons">';
-                if (stats.comparisons.most_crs) html += '<span>Most active: <strong>' + escHtml(stats.comparisons.most_crs) + '</strong></span>';
-                if (stats.comparisons.quietest) html += '<span>Quietest: <strong>' + escHtml(stats.comparisons.quietest) + '</strong></span>';
-                html += '</div>';
+            // ── Activity Bars ──
+            const maxCommits = Math.max(...entries.map(([, s]) => s.total_commits || 0), 1);
+            html += '<div class="cr-bars" style="margin-top:16px;">';
+            for (const [alias, s] of entries) {
+                const name = (s.nickname || s.display_name || alias).slice(0, 10);
+                const pct = Math.round(((s.total_commits || 0) / maxCommits) * 100);
+                html += '<div class="cr-bar-row">' +
+                    '<span class="cr-bar-name">' + escHtml(name) + '</span>' +
+                    '<div class="cr-bar-track"><div class="cr-bar-fill" style="width:' + pct + '%;"></div></div>' +
+                    '<span class="cr-bar-count">' + (s.total_commits || 0) + '</span>' +
+                    '</div>';
             }
+            html += '</div>';
         }
 
-        if (history) {
-            const ids = history.commented_ids || [];
-            html += '<div class="cr-intel-header" style="margin-top:14px;">Gossip Memory <span style="font-weight:400;color:var(--text-muted);">· ' + ids.length + ' entries · resets ' + escHtml(history.week_start || 'next period') + '</span></div>';
-            if (ids.length > 0) {
-                html += '<div class="cr-intel-history">';
-                ids.slice(-5).reverse().forEach(id => {
-                    const parts = id.split(':');
-                    html += '<div class="cr-history-item"><span class="cr-history-author">' + escHtml(parts[0] || '') + '</span> ' + escHtml(parts.slice(1).join(':').slice(0, 35)) + '</div>';
-                });
-                html += '</div>';
-                if (ids.length > 5) {
-                    html += '<div style="margin-top:6px;"><button class="btn-secondary" onclick="openDataFolder()" style="font-size:9px;height:20px;padding:0 6px;">View All in Finder</button></div>';
-                }
+        // ── Heatmap ──
+        if (activity) {
+            const authors = Object.keys(activity).sort();
+            // Get last 14 days
+            const days = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date(Date.now() - i * 86400000);
+                days.push(d.toISOString().slice(0, 10));
             }
+            const dayLabels = days.map(d => { const dt = new Date(d + 'T00:00'); return ['Su','Mo','Tu','We','Th','Fr','Sa'][dt.getDay()]; });
+
+            html += '<div class="cr-heatmap">';
+            html += '<div class="cr-heatmap-header">' + dayLabels.map(l => '<span class="cr-heatmap-day">' + l + '</span>').join('') + '</div>';
+            for (const author of authors) {
+                const data = activity[author] || {};
+                html += '<div class="cr-heatmap-row"><span class="cr-heatmap-name">' + escHtml(author.slice(0, 8)) + '</span>';
+                for (const day of days) {
+                    const count = data[day] || 0;
+                    const level = count === 0 ? '' : count === 1 ? 'level-1' : count === 2 ? 'level-2' : count <= 4 ? 'level-3' : 'level-4';
+                    html += '<div class="cr-heatmap-cell ' + level + '" title="' + day + ': ' + count + '"></div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
         }
 
         panel.innerHTML = html || '<span style="color:var(--text-muted);">No data yet. Click Refresh.</span>';
@@ -852,14 +879,37 @@ async function loadCrIntelligence() {
 }
 
 async function refreshCrStats() {
+    const btn = event ? event.target : null;
+    if (btn) { btn.classList.add('btn-refreshing'); btn.disabled = true; }
     const panel = document.getElementById('crIntelPanel');
-    if (panel) panel.innerHTML = '<span style="color:var(--accent);">Refreshing...</span>';
+
+    // Show skeleton loading
+    if (panel) {
+        panel.innerHTML = '<div class="cr-skeleton">' +
+            '<div class="cr-skeleton-row"></div>' +
+            '<div class="cr-skeleton-row"></div>' +
+            '<div class="cr-skeleton-row"></div>' +
+            '<div class="cr-skeleton-row"></div>' +
+            '<div class="cr-skeleton-row"></div>' +
+            '</div>';
+    }
+
     try {
         await window.__TAURI_INTERNALS__.invoke('refresh_team_stats');
         await loadCrIntelligence();
+        // Show "Updated" badge
+        if (btn) {
+            const badge = document.createElement('span');
+            badge.className = 'cr-updated-badge';
+            badge.textContent = '✓ Updated';
+            btn.parentElement.appendChild(badge);
+            setTimeout(() => badge.classList.add('fade'), 2000);
+            setTimeout(() => badge.remove(), 2500);
+        }
     } catch(e) {
         if (panel) panel.innerHTML = '<span style="color:var(--red);">' + e + '</span>';
     }
+    if (btn) { btn.classList.remove('btn-refreshing'); btn.disabled = false; }
 }
 
 async function clearGossipMemory() {

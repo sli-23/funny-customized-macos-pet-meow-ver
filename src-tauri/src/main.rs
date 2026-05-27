@@ -367,6 +367,7 @@ fn main() {
             runtime::commands::ai::trigger_cr_comment,
             runtime::commands::ai::trigger_targeted_gossip,
             runtime::commands::ai::get_team_stats,
+            runtime::commands::ai::get_team_activity,
             runtime::commands::ai::get_gossip_history,
             runtime::commands::ai::clear_gossip_memory,
             runtime::commands::ai::refresh_team_stats,

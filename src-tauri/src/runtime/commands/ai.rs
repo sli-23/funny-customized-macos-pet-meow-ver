@@ -9,6 +9,27 @@ pub fn get_team_stats() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
+pub fn get_team_activity() -> Result<serde_json::Value, String> {
+    let commits_path = crate::runtime::memory::amazon_data_dir().join("commits.json");
+    let data = std::fs::read_to_string(&commits_path)
+        .map_err(|_| "No commits cached".to_string())?;
+    let commits: Vec<serde_json::Value> = serde_json::from_str(&data)
+        .map_err(|_| "Invalid commits".to_string())?;
+
+    // Build activity: { author: { "2026-05-20": count, ... } }
+    let mut activity: std::collections::HashMap<String, std::collections::HashMap<String, u32>> = std::collections::HashMap::new();
+    for c in &commits {
+        let author = c["author"].as_str().unwrap_or("").to_string();
+        let date = c["date"].as_str().unwrap_or("").get(..10).unwrap_or("").to_string();
+        if !author.is_empty() && !date.is_empty() {
+            *activity.entry(author).or_default().entry(date).or_insert(0) += 1;
+        }
+    }
+
+    Ok(serde_json::json!(activity))
+}
+
+#[tauri::command]
 pub fn get_gossip_history() -> Result<serde_json::Value, String> {
     let mem_path = crate::paths::memory_dir().join("cr_commented.json");
     let data = std::fs::read_to_string(&mem_path).unwrap_or_else(|_| r#"{"week_start":"","commented_ids":[]}"#.to_string());
