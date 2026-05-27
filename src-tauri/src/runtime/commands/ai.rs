@@ -259,12 +259,12 @@ pub async fn trigger_cr_comment(app: tauri::AppHandle) -> Result<String, String>
             let teammate_stats = &ts["teammates"][author];
             let comparisons = &ts["comparisons"];
             format!(
-                "\nTEAM STATS:\n- {}: {} CRs, {} commits, streak {} days, avg {} files/CR\n- Most active: {}\n- Quietest: {}\n",
+                "\nTEAM STATS:\n- {}: {} CRs, {} commits, streak {} days, avg {} changes/CR\n- Most active: {}\n- Quietest: {}\n",
                 display_name,
                 teammate_stats["total_crs"].as_u64().unwrap_or(0),
                 teammate_stats["total_commits"].as_u64().unwrap_or(0),
                 teammate_stats["streak_days"].as_u64().unwrap_or(0),
-                teammate_stats["avg_files_per_cr"].as_f64().unwrap_or(0.0),
+                teammate_stats["avg_changes_per_cr"].as_f64().unwrap_or(0.0),
                 comparisons["most_crs"].as_str().unwrap_or("?"),
                 comparisons["quietest"].as_str().unwrap_or("?"),
             )
@@ -368,13 +368,13 @@ pub async fn trigger_targeted_gossip(app: tauri::AppHandle, target_alias: String
     let stats_context = team_stats.as_ref().map(|ts| {
         let s = &ts["teammates"][target_alias.as_str()];
         format!(
-            "STATS for {}:\n- {} CRs, {} commits total\n- Streak: {} days\n- Avg {} files per CR\n- Biggest CR: {} files (\"{}\")\n- Packages: {:?}\n- Most active day: {}\n",
+            "STATS for {}:\n- {} CRs, {} commits total\n- Streak: {} days\n- Avg {} changes per CR\n- Biggest CR: {} changes (\"{}\")\n- Packages: {:?}\n- Most active day: {}\n",
             display_name,
             s["total_crs"].as_u64().unwrap_or(0),
             s["total_commits"].as_u64().unwrap_or(0),
             s["streak_days"].as_u64().unwrap_or(0),
-            s["avg_files_per_cr"].as_f64().unwrap_or(0.0),
-            s["largest_cr_files"].as_u64().unwrap_or(0),
+            s["avg_changes_per_cr"].as_f64().unwrap_or(0.0),
+            s["largest_cr_changes"].as_u64().unwrap_or(0),
             s["largest_cr_title"].as_str().unwrap_or(""),
             s["packages_touched"].as_array().map(|a| a.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>()).unwrap_or_default(),
             s["most_active_day"].as_str().unwrap_or(""),
