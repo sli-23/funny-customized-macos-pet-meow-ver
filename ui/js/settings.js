@@ -582,16 +582,35 @@ function renderTeamList(team) {
     }
     const nicknames = JSON.parse(localStorage.getItem('amazonNicknames') || '{}');
     const names = team.teammate_names || {};
+    const PREVIEW_COUNT = 5;
+    const total = team.teammates.length;
+
     let html = '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Manager: <strong>' + escHtml(team.manager_name || team.manager || '?') + '</strong></div>';
     html += '<table class="team-table"><thead><tr><th>Alias</th><th>Name</th><th>Nickname</th><th></th></tr></thead><tbody>';
-    team.teammates.forEach(t => {
-        html += '<tr><td class="alias alias-link" onclick="openTeammateProfile(\'' + escHtml(t) + '\')">' + escHtml(t) + '</td><td class="name">' + escHtml(names[t] || '') + '</td>' +
+    team.teammates.forEach((t, i) => {
+        const hidden = i >= PREVIEW_COUNT ? ' style="display:none;" class="team-extra-row"' : '';
+        html += '<tr' + hidden + '><td class="alias alias-link" onclick="openTeammateProfile(\'' + escHtml(t) + '\')">' + escHtml(t) + '</td><td class="name">' + escHtml(names[t] || '') + '</td>' +
             '<td><input type="text" class="nick-input" data-alias="' + t + '" value="' + escHtml(nicknames[t] || '') + '" placeholder="..."></td>' +
             '<td><button class="btn-judge" onclick="judgeTeammate(\'' + escHtml(t) + '\', this)">Judge</button></td></tr>';
     });
     html += '</tbody></table>';
+    if (total > PREVIEW_COUNT) {
+        html += '<div style="margin-top:8px;"><button class="btn-secondary" style="font-size:10px;height:24px;padding:0 10px;" onclick="expandTeamList(this)">Show all ' + total + ' members</button></div>';
+    }
     teamEl.innerHTML = html;
     teamEl.querySelectorAll('.nick-input').forEach(el => el.addEventListener('change', saveNicknames));
+}
+
+function expandTeamList(btn) {
+    document.querySelectorAll('.team-extra-row').forEach(row => row.style.display = '');
+    btn.textContent = 'Show less';
+    btn.onclick = function() { collapseTeamList(btn); };
+}
+
+function collapseTeamList(btn) {
+    document.querySelectorAll('.team-extra-row').forEach(row => row.style.display = 'none');
+    btn.textContent = 'Show all ' + document.querySelectorAll('.team-extra-row').length + ' more';
+    btn.onclick = function() { expandTeamList(btn); };
 }
 
 async function openTeammateProfile(alias) {
@@ -808,7 +827,7 @@ async function loadCrIntelligence() {
             html += '<div class="cr-leaderboard">';
             if (comp.most_commits) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🏆</span><span class="cr-leader-label">Most Active</span><span class="cr-leader-value">' + escHtml(comp.most_commits) + '</span></div>';
             if (comp.quietest) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🐟</span><span class="cr-leader-label">Quietest</span><span class="cr-leader-value">' + escHtml(comp.quietest) + '</span></div>';
-            if (comp.biggest_single_cr) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🚀</span><span class="cr-leader-label">Biggest PR</span><span class="cr-leader-value">' + escHtml(comp.biggest_single_cr.author) + ' (' + comp.biggest_single_cr.files + ')</span></div>';
+            if (comp.biggest_single_cr) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🚀</span><span class="cr-leader-label">Biggest CR</span><span class="cr-leader-value">' + escHtml(comp.biggest_single_cr.author) + ' (' + comp.biggest_single_cr.files + ' changes)</span></div>';
             if (comp.longest_streak) html += '<div class="cr-leader-item"><span class="cr-leader-icon">🔥</span><span class="cr-leader-label">Streak</span><span class="cr-leader-value">' + escHtml(comp.longest_streak.author) + ' (' + comp.longest_streak.days + 'd)</span></div>';
             html += '</div>';
 
@@ -1020,11 +1039,73 @@ async function petAction(cmd) {
     } catch(e) { console.error('petAction:', e); }
 }
 
+// ── Site Reactions Toggles ──
+async function loadSiteReactions() {
+    const panel = document.getElementById('siteReactionsPanel');
+    if (!panel) return;
+    try {
+        const modules = await window.__TAURI_INTERNALS__.invoke('get_modules');
+        const amazonMod = modules.find(m => m.id === 'amazon-internal');
+        if (!amazonMod) { panel.innerHTML = '<span style="color:var(--text-muted);">Amazon module not loaded</span>'; return; }
+
+        const cfg = await window.__TAURI_INTERNALS__.invoke('get_module_mcp_config', { moduleId: 'amazon-internal' });
+        const disabled = cfg.disabled_reactions || [];
+
+        // Get reactions from the module loader (already parsed by Rust)
+        const allModules = await window.__TAURI_INTERNALS__.invoke('get_modules');
+        const amz = allModules.find(m => m.id === 'amazon-internal');
+        if (!amz) { panel.innerHTML = '<span style="color:var(--text-muted);">Module not found</span>'; return; }
+
+        // Use reaction_count from module info + build list from config's known IDs
+        // Since we can't get individual reaction IDs from get_modules, use the disabled list + known IDs
+        const knownReactions = [
+            ['code-amazon', 6], ['phonetool', 3], ['quip', 3], ['sharepoint', 4],
+            ['wiki', 3], ['sim-issues', 3], ['pipelines', 3], ['broadcast', 3],
+            ['kingpin', 3], ['sage', 3], ['mcm', 3], ['oncall', 3], ['apollo', 3],
+            ['builderhub', 3], ['quicksight', 3], ['cr-review', 6], ['cr-package', 5],
+            ['taskei', 3], ['tod-tests', 3], ['shepherd', 3], ['isengard', 3],
+            ['cloudwatch', 3], ['outlook-calendar', 4], ['version-sets', 4],
+            ['chime', 5], ['forte', 4], ['connections', 3], ['atoz', 3],
+            ['amazon-jobs', 4], ['conduit', 3], ['observe-alarms', 4],
+            ['paste', 3], ['build', 4], ['lse', 3], ['meridian', 3]
+        ];
+
+        let html = '<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">' + knownReactions.length + ' site reactions</div>';
+        for (const [id, msgCount] of knownReactions) {
+            const isEnabled = !disabled.includes(id);
+            const label = id.replace(/-/g, ' ');
+            html += '<div class="site-reaction-row">' +
+                '<div class="toggle" style="padding:3px 0;">' +
+                '<input type="checkbox" id="sr_' + id + '" ' + (isEnabled ? 'checked' : '') + ' onchange="toggleSiteReaction(\'' + id + '\', this.checked)">' +
+                '<label for="sr_' + id + '" style="font-size:12px;flex:1;text-transform:capitalize;">' + escHtml(label) + '</label>' +
+                '</div>' +
+                '<span style="font-size:12px;font-weight:600;color:var(--accent);font-family:\'SF Mono\',monospace;min-width:20px;text-align:right;">' + msgCount + '</span>' +
+                '</div>';
+        }
+        panel.innerHTML = html;
+    } catch(e) { panel.innerHTML = '<span style="color:var(--text-muted);">Failed to load: ' + e + '</span>'; }
+}
+
+async function toggleSiteReaction(reactionId, enabled) {
+    try {
+        const cfg = await window.__TAURI_INTERNALS__.invoke('get_module_mcp_config', { moduleId: 'amazon-internal' });
+        let disabled = cfg.disabled_reactions || [];
+        if (enabled) {
+            disabled = disabled.filter(id => id !== reactionId);
+        } else {
+            if (!disabled.includes(reactionId)) disabled.push(reactionId);
+        }
+        cfg.disabled_reactions = disabled;
+        await window.__TAURI_INTERNALS__.invoke('save_module_mcp_config', { moduleId: 'amazon-internal', config: cfg });
+    } catch(e) {}
+}
+
 // ── Init ──
 loadSettings();
 loadModules();
 loadPriorities();
 loadAmazonConfig();
 loadCrIntelligence();
+loadSiteReactions();
 loadPetStatus();
 loadActivityHistory();

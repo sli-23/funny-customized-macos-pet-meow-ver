@@ -69,6 +69,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
         let mut was_typing = false;
         let mut last_typing_log: u64 = 0;
         let mut last_title_log: u64 = 0;
+        let mut last_logged_title = String::new();
         let mut last_periodic_eval: u64 = 0;
         let mut last_config_load: u64 = 0;
         let mut reaction_cooldown_ms: u64 = 10_000;
@@ -258,8 +259,9 @@ pub async fn start_polling(app: tauri::AppHandle) {
                 if dev_mode {
                     dev_log(&app, "SWITCH", "event", &format!("→ \"{}\"", app_name));
                 }
-            } else if dev_mode && now_ms - last_title_log > 10_000 {
+            } else if dev_mode && now_ms - last_title_log > 10_000 && window_info != last_logged_title {
                 last_title_log = now_ms;
+                last_logged_title = window_info.clone();
                 dev_log(&app, "APP", "event", &format!("app=\"{}\" title=\"{}\"", app_name, &window_title[..window_title.len().min(40)]));
             }
 

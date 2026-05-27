@@ -510,6 +510,29 @@
     font-weight: 600;
 }
 
+/* ── Site Reaction Toggles ── */
+.site-reaction-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.site-reaction-row:last-child { border-bottom: none; }
+.site-reaction-row .toggle { flex: 1; }
+.site-reaction-row .toggle input[type="checkbox"] {
+    width: 28px;
+    height: 16px;
+    min-width: 28px;
+}
+.site-reaction-row .toggle input[type="checkbox"]::after {
+    width: 12px;
+    height: 12px;
+}
+.site-reaction-row .toggle input[type="checkbox"]:checked::after {
+    transform: translateX(12px);
+}
+
 /* ═══ CR INTELLIGENCE VISUALS ═══ */
 
 /* ── Leaderboard ── */
@@ -572,7 +595,7 @@
 }
 
 /* ── Heatmap ── */
-.cr-heatmap { margin-bottom: 16px; }
+.cr-heatmap { margin-bottom: 16px; margin-top: 16px; }
 .cr-heatmap-header {
     display: flex;
     gap: 3px;

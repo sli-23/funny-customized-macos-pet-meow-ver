@@ -117,9 +117,14 @@ impl ReactionEngine {
         let mut blocked_by_cooldown: Option<(String, String)> = None;
 
         let overrides = load_priority_overrides();
+        let disabled_reactions = load_disabled_reactions();
 
         for (module, reaction) in modules {
             if module.status != ModuleStatus::Active {
+                continue;
+            }
+
+            if disabled_reactions.contains(&reaction.id) {
                 continue;
             }
 
@@ -255,6 +260,17 @@ impl ReactionEngine {
             *self.cooldowns_dirty.write().await = false;
         }
     }
+}
+
+fn load_disabled_reactions() -> Vec<String> {
+    let path = crate::paths::amazon_data_dir().join("config.json");
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|data| serde_json::from_str::<serde_json::Value>(&data).ok())
+        .and_then(|v| v["disabled_reactions"].as_array().map(|arr| {
+            arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
+        }))
+        .unwrap_or_default()
 }
 
 fn load_priority_overrides() -> HashMap<String, u8> {

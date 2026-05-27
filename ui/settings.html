@@ -549,6 +549,14 @@
                     </div>
                     <div id="crIntelPanel" style="font-size:11px;color:var(--text-muted);">Click Refresh to load CR data</div>
                 </div>
+
+                <div class="section">
+                    <div class="section-title" style="cursor:pointer;" onclick="document.getElementById('siteReactionsPanel').style.display = document.getElementById('siteReactionsPanel').style.display === 'none' ? '' : 'none'">Advanced — Site Reactions <span style="font-size:10px;color:var(--text-muted);font-weight:400;">▸ click to expand</span></div>
+                    <div class="section-desc">Toggle reactions for specific sites. Disabled sites won't trigger cat messages.</div>
+                    <div class="section-panel" id="siteReactionsPanel" style="max-height:300px;overflow-y:auto;display:none;">
+                        <div style="color:var(--text-muted);font-size:11px;">Loading...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- ADVANCED -->
@@ -673,6 +681,10 @@
                         <div class="shortcut-row">
                             <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd></span>
                             <span class="shortcut-desc">Chat with your pet (from anywhere)</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>P</kbd></span>
+                            <span class="shortcut-desc">Open Control Panel (from anywhere)</span>
                         </div>
                         <div class="shortcut-row">
                             <span class="shortcut-keys"><kbd>Esc</kbd></span>

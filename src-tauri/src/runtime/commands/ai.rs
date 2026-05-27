@@ -251,7 +251,7 @@ pub async fn trigger_cr_comment(app: tauri::AppHandle) -> Result<String, String>
 
     let prompt = if author == user_alias {
         format!(
-            "You are an encouraging cat praising your owner's code.\nPackage: \"{}\"\nCommit: \"{}\"\nFiles changed: {}\n{}\nGenerate ONE short encouraging message (under 50 chars). Your comment MUST be about this specific commit: \"{}\". Do NOT reference other work. Start with 😸",
+            "You are an encouraging cat praising your owner's code.\nPackage: \"{}\"\nCommit: \"{}\"\nChanges: {}\n{}\nGenerate ONE short encouraging message (under 50 chars). Your comment MUST be about this specific commit: \"{}\". Do NOT reference other work. Start with 😸",
             package, title, changes, lang_hint, title
         )
     } else {
@@ -276,11 +276,11 @@ pub async fn trigger_cr_comment(app: tauri::AppHandle) -> Result<String, String>
                 stats_context, lang_hint, sass_hint, display_name
             ),
             "content" => format!(
-                "You are a cute, playful cat reacting to what a teammate is working on.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nWorking on: \"{}\"\nFiles changed: {}\n{} {}\nReact to the TOPIC. Be specific about \"{}\". MUST mention \"{}\". Under 50 chars. Start with 😼",
+                "You are a cute, playful cat reacting to what a teammate is working on.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nWorking on: \"{}\"\nChanges: {}\n{} {}\nReact to the TOPIC. Be specific about \"{}\". MUST mention \"{}\". Under 50 chars. Start with 😼",
                 display_name, title, changes, lang_hint, sass_hint, title, display_name
             ),
             _ => format!(
-                "You are a cute, playful cat teasing your owner's teammate about their code.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nCommit: \"{}\"\nFiles changed: {}\n{}{} {}\nTease their habits (PR size, speed). MUST use name \"{}\". Under 50 chars. Start with 😼 {}.",
+                "You are a cute, playful cat teasing your owner's teammate about their code.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nCommit: \"{}\"\nChanges: {}\n{}{} {}\nTease their habits (PR size, speed). MUST use name \"{}\". Under 50 chars. Start with 😼 {}.",
                 display_name, title, changes, stats_context, lang_hint, sass_hint, display_name, display_name
             ),
         }
