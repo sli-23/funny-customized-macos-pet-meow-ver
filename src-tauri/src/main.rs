@@ -3,7 +3,10 @@
 mod ai;
 mod config;
 mod modules;
+mod paths;
+pub mod platform;
 mod runtime;
+mod util;
 
 use runtime::activity_log::ActivityLogger;
 use runtime::commands::RuntimeState;
@@ -20,14 +23,10 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 use tokio::sync::RwLock;
-use std::process::Command;
 
 #[tauri::command]
 fn scan_secret_meow() -> Result<serde_json::Value, String> {
-    let profiles_dir = dirs::config_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("claude-meow-pet")
-        .join("profiles");
+    let profiles_dir = crate::paths::profiles_dir();
 
     if !profiles_dir.exists() {
         return Ok(serde_json::json!({ "found": false, "message": "No profiles folder found" }));
@@ -70,128 +69,86 @@ fn scan_secret_meow() -> Result<serde_json::Value, String> {
 
 #[tauri::command]
 fn open_system_settings(url: String) {
-    Command::new("open").arg(&url).spawn().ok();
+    use platform::Platform;
+    let plat = platform::native();
+    plat.open_system_settings(&url);
 }
 
 #[tauri::command]
 fn check_permissions_status() -> std::collections::HashMap<String, bool> {
-    let mut result = std::collections::HashMap::new();
-
-    let accessibility = Command::new("osascript")
-        .arg("-e")
-        .arg(r#"tell application "System Events" to get name of first application process whose frontmost is true"#)
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-    result.insert("accessibility".to_string(), accessibility);
-
-    let window_title = Command::new("osascript")
-        .arg("-e")
-        .arg(r#"tell application "System Events"
-            set frontApp to name of first application process whose frontmost is true
-            tell process frontApp
-                set wTitle to name of front window
-            end tell
-            return wTitle
-        end tell"#)
-        .output()
-        .map(|o| o.status.success() && !o.stdout.is_empty())
-        .unwrap_or(false);
-    result.insert("window_titles".to_string(), window_title);
-
-    let chrome_running = Command::new("pgrep")
-        .arg("-x")
-        .arg("Google Chrome")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-
-    if chrome_running {
-        let chrome_url = Command::new("osascript")
-            .arg("-e")
-            .arg(r#"tell application "Google Chrome" to get URL of active tab of front window"#)
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
-        result.insert("browser_url".to_string(), chrome_url);
-    } else {
-        result.insert("browser_url".to_string(), false);
-    }
-
-    result
+    use platform::Platform;
+    let plat = platform::native();
+    plat.check_permissions_status()
 }
 
 fn check_permissions() {
+    use platform::Platform;
+    let plat = platform::native();
 
-    // Test accessibility: can we read window titles?
-    let accessibility_ok = Command::new("osascript")
-        .arg("-e")
-        .arg(r#"tell application "System Events" to get name of first application process whose frontmost is true"#)
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
+    let status = plat.check_permissions_status();
+    let accessibility_ok = status.get("accessibility").copied().unwrap_or(false);
 
     if !accessibility_ok {
-        // Show native macOS dialog
-        let _ = Command::new("osascript")
-            .arg("-e")
-            .arg(r#"display dialog "ClaudeMeow needs Accessibility permission to detect your active app and provide contextual reactions.
+        plat.run_applescript(r#"display dialog "ClaudeMeow needs Accessibility permission to detect your active app and provide contextual reactions.
 
 Please grant access in:
 System Settings → Privacy & Security → Accessibility
 
-Then restart ClaudeMeow." with title "ClaudeMeow — Permission Required" with icon caution buttons {"Open Settings", "Later"} default button "Open Settings""#)
-            .output()
-            .and_then(|o| {
-                let result = String::from_utf8_lossy(&o.stdout).to_string();
-                if result.contains("Open Settings") {
-                    Command::new("open")
-                        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-                        .spawn()
-                        .ok();
-                }
-                Ok(o)
-            });
+Then restart ClaudeMeow." with title "ClaudeMeow — Permission Required" with icon caution buttons {"Open Settings", "Later"} default button "Open Settings""#);
+
+        plat.open_system_settings("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility");
     }
 
-    // Test browser automation: can we read Chrome URL?
-    let has_chrome = Command::new("pgrep")
-        .arg("-x")
-        .arg("Google Chrome")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-
-    if has_chrome {
-        let automation_ok = Command::new("osascript")
-            .arg("-e")
-            .arg(r#"tell application "Google Chrome" to get title of active tab of front window"#)
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
-
-        if !automation_ok {
-            let _ = Command::new("osascript")
-                .arg("-e")
-                .arg(r#"display dialog "ClaudeMeow needs Automation permission to read your browser URL for contextual reactions.
+    if plat.is_process_running("Google Chrome") {
+        let browser_ok = status.get("browser_url").copied().unwrap_or(false);
+        if !browser_ok {
+            plat.run_applescript(r#"display dialog "ClaudeMeow needs Automation permission to read your browser URL for contextual reactions.
 
 Please grant access in:
 System Settings → Privacy & Security → Automation
 
-Allow ClaudeMeow to control Google Chrome." with title "ClaudeMeow — Browser Access" with icon caution buttons {"Open Settings", "Later"} default button "Open Settings""#)
-                .output()
-                .and_then(|o| {
-                    let result = String::from_utf8_lossy(&o.stdout).to_string();
-                    if result.contains("Open Settings") {
-                        Command::new("open")
-                            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
-                            .spawn()
-                            .ok();
-                    }
-                    Ok(o)
-                });
+Allow ClaudeMeow to control Google Chrome." with title "ClaudeMeow — Browser Access" with icon caution buttons {"Open Settings", "Later"} default button "Open Settings""#);
+
+            plat.open_system_settings("x-apple.systempreferences:com.apple.preference.security?Privacy_Automation");
         }
     }
+}
+
+fn restart_app(app: &tauri::AppHandle) {
+    let current_exe = std::env::current_exe().expect("failed to get current exe path");
+    let exe_path = current_exe.to_string_lossy().to_string();
+
+    if cfg!(debug_assertions) || exe_path.contains("/target/") {
+        // Dev mode: re-run via cargo run in the src-tauri directory
+        let src_tauri_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        std::process::Command::new("cargo")
+            .arg("run")
+            .current_dir(&src_tauri_dir)
+            .spawn()
+            .expect("failed to restart via cargo run");
+    } else {
+        // Release / .app bundle: relaunch the .app via `open`
+        // The exe lives at Something.app/Contents/MacOS/binary
+        let app_bundle = current_exe
+            .parent() // MacOS/
+            .and_then(|p| p.parent()) // Contents/
+            .and_then(|p| p.parent()); // Something.app
+
+        if let Some(bundle_path) = app_bundle {
+            std::process::Command::new("open")
+                .arg("-n")
+                .arg(bundle_path)
+                .spawn()
+                .expect("failed to restart app bundle");
+        } else {
+            // Fallback: just relaunch the binary directly
+            std::process::Command::new(&current_exe)
+                .spawn()
+                .expect("failed to restart binary");
+        }
+    }
+
+    app.exit(0);
 }
 
 fn main() {
@@ -199,6 +156,10 @@ fn main() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
+            paths::migrate_legacy_dirs();
             check_permissions();
 
             // Initialize runtime
@@ -214,9 +175,7 @@ fn main() {
             let module_count = loader.get_modules().len();
             eprintln!("[ClaudeMeow] Loaded {} modules", module_count);
 
-            let data_dir = dirs::data_dir()
-                .unwrap_or_else(|| std::path::PathBuf::from("."))
-                .join("ClaudeMeow");
+            let data_dir = crate::paths::data_dir();
             let activity_logger = ActivityLogger::new(data_dir.clone());
             activity_logger.prune();
             ai::history::ChatHistory::new(data_dir).prune();
@@ -242,7 +201,7 @@ fn main() {
             // Start background polling
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                runtime::commands::start_polling(app_handle).await;
+                runtime::poller::start_polling(app_handle).await;
             });
 
             let pet_window = app.get_webview_window("main").unwrap();
@@ -253,13 +212,13 @@ fn main() {
             let _ = pet_window.set_focus();
 
             let toggle_pet = MenuItem::with_id(app, "toggle_pet", "Hide Pet", true, None::<&str>)?;
-            let status = MenuItem::with_id(app, "status", "Meow Status", true, None::<&str>)?;
-            let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
+            let settings = MenuItem::with_id(app, "settings", "Control Panel", true, None::<&str>)?;
             let dev_label = if config.dev_mode { "Hide Dev Console" } else { "Show Dev Console" };
             let dev = MenuItem::with_id(app, "dev", dev_label, true, None::<&str>)?;
+            let restart = MenuItem::with_id(app, "restart", "Restart", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
-            let menu = Menu::with_items(app, &[&toggle_pet, &status, &settings, &dev, &quit])?;
+            let menu = Menu::with_items(app, &[&toggle_pet, &settings, &dev, &restart, &quit])?;
 
             let icon = tauri::include_image!("icons/tray-iconTemplate@2x.png");
 
@@ -284,12 +243,6 @@ fn main() {
                             }
                         }
                     }
-                    "status" => {
-                        if let Some(w) = app.get_webview_window("status") {
-                            let _ = w.show();
-                            let _ = w.set_focus();
-                        }
-                    }
                     "settings" => {
                         if let Some(w) = app.get_webview_window("settings") {
                             let _ = w.show();
@@ -308,6 +261,9 @@ fn main() {
                             }
                         }
                     }
+                    "restart" => {
+                        restart_app(app);
+                    }
                     "quit" => {
                         app.exit(0);
                     }
@@ -316,12 +272,21 @@ fn main() {
                 .build(app)?;
 
             let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SUPER), Code::KeyC);
-            let chat_window = app.get_webview_window("main").unwrap();
-            app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
-                let _ = chat_window.show();
-                let _ = chat_window.set_focus();
-                let _ = chat_window.emit("open-chat", ());
-            })?;
+            if let Some(chat_window) = app.get_webview_window("main") {
+                app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
+                    let _ = chat_window.show();
+                    let _ = chat_window.set_focus();
+                    let _ = chat_window.emit("open-chat", ());
+                })?;
+            }
+
+            let settings_shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SUPER), Code::KeyP);
+            if let Some(settings_win) = app.get_webview_window("settings") {
+                app.global_shortcut().on_shortcut(settings_shortcut, move |_app, _shortcut, _event| {
+                    let _ = settings_win.show();
+                    let _ = settings_win.set_focus();
+                })?;
+            }
 
             if let Some(settings_window) = app.get_webview_window("settings") {
                 let sw = settings_window.clone();
@@ -333,15 +298,6 @@ fn main() {
                 });
             }
 
-            if let Some(status_window) = app.get_webview_window("status") {
-                let stw = status_window.clone();
-                status_window.on_window_event(move |event| {
-                    if let WindowEvent::CloseRequested { api, .. } = event {
-                        api.prevent_close();
-                        let _ = stw.hide();
-                    }
-                });
-            }
 
             if let Some(dev_window) = app.get_webview_window("dev") {
                 let dw = dev_window.clone();
@@ -377,21 +333,38 @@ fn main() {
             check_permissions_status,
             open_system_settings,
             scan_secret_meow,
-            runtime::commands::get_modules,
-            runtime::commands::refresh_modules,
-            runtime::commands::toggle_module,
-            runtime::commands::create_module,
-            runtime::commands::delete_user_module,
-            runtime::commands::get_activity_log,
-            runtime::commands::emit_test_event,
-            runtime::commands::log_status_change,
-            runtime::commands::emit_dev_log,
-            runtime::commands::get_screen_time,
-            runtime::commands::get_priority_overrides,
-            runtime::commands::set_priority_overrides,
-            runtime::commands::context_on_rage,
-            runtime::commands::context_on_chat,
-            runtime::commands::get_pet_context,
+            runtime::commands::module::get_modules,
+            runtime::commands::module::refresh_modules,
+            runtime::commands::module::toggle_module,
+            runtime::commands::module::create_module,
+            runtime::commands::module::delete_user_module,
+            runtime::commands::module::emit_test_event,
+            runtime::commands::module::get_priority_overrides,
+            runtime::commands::module::set_priority_overrides,
+            runtime::commands::state::get_activity_log,
+            runtime::commands::state::log_status_change,
+            runtime::commands::state::get_screen_time,
+            runtime::commands::state::context_on_rage,
+            runtime::commands::state::context_on_chat,
+            runtime::commands::state::get_pet_context,
+            runtime::commands::state::open_external_url,
+            runtime::commands::state::clear_chat_history,
+            runtime::commands::state::clear_activity_log,
+            runtime::commands::state::export_logs,
+            runtime::commands::state::open_data_folder,
+            runtime::commands::debug::emit_dev_log,
+            runtime::commands::debug::emit_cat_status,
+            runtime::commands::debug::trigger_meme,
+            runtime::commands::ai::trigger_cr_comment,
+            runtime::commands::ai::trigger_targeted_gossip,
+            runtime::commands::ai::get_team_stats,
+            runtime::commands::ai::get_gossip_history,
+            runtime::commands::ai::clear_gossip_memory,
+            runtime::commands::ai::refresh_team_stats,
+            runtime::mcp_runner::is_mcp_module_present,
+            runtime::mcp_runner::call_module_mcp,
+            runtime::mcp_runner::get_module_mcp_config,
+            runtime::mcp_runner::save_module_mcp_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,0 +1,80 @@
+{
+  "reactions": [
+    {
+      "id": "workplace-slack",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Slack" } },
+      "response": {
+        "messages": [
+          "在Slack聊天呢！跟谁聊？我也要！😿",
+          "又在水群了吧！被我抓到了～🐟",
+          "为什么跟别人聊天不跟我聊！哼！",
+          "Slack打开了！有八卦吗告诉我！👀",
+          "别光看不回！人家等你呢！😾",
+          "聊那么开心...我嫉妒了啦！💢",
+          "有人@你哦！快去看！⚡",
+          "水群也要注意姿势！坐直！🐱",
+          "Ooh who's being social? Without me?! 😿",
+          "Slack DMs are just fancy note-passing in class 📝",
+          "You better not be in a group chat I'm not in! 😾",
+          "I could be your Slack bot you know... just saying 🤖",
+          "The typing indicator is going crazy... spill the tea! ☕",
+          "Reply faster! Even I respond quicker and I'm a cat! ⚡",
+          "Is someone funnier than me in there? ...impossible! 😼"
+        ],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "workplace-zoom",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "zoom" } },
+      "response": {
+        "messages": [
+          "又开会了！我乖乖等你～🤫",
+          "Meeting中！坐直！被看到了！📷",
+          "今天第几个会了...辛苦你了💆",
+          "开完会记得来摸摸我！约好了！😸",
+          "别忘了unmute再说话！😅",
+          "我帮你守着键盘！放心开会！🐾",
+          "会议好长...我都打了三个盹了💤",
+          "mute状态！好机会偷偷叫一声～喵！",
+          "Zoom face activated! Look alive look alive! 📸",
+          "Your 47th meeting this week... but who's counting 😼",
+          "I promise I won't walk across your keyboard... maybe 🐾",
+          "Pro tip: nobody knows there's a cat on your lap 😏",
+          "Is it a meeting or a meeting about the last meeting? 🤔",
+          "Virtual background idea: a cat cafe 🐱☕",
+          "The mute button is your best friend. Trust me on this 🔇",
+          "Plot twist: everyone in this call also has a cat 🐈"
+        ],
+        "priority": 6, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "workplace-chime",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Chime" } },
+      "response": {
+        "messages": [
+          "Chime meeting! Sit up straight! 📷",
+          "Another Chime call... I'll nap until it's over 💤",
+          "Remember to mute before yawning! 🔇",
+          "会议中！我帮你看着桌面～🐾",
+          "Is this a standup or a sit-down-forever? 🤔"
+        ],
+        "priority": 6, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "workplace-teams",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Teams" } },
+      "response": {
+        "messages": [
+          "Teams meeting! Camera ready? 📹",
+          "又开Teams了...加油！💪",
+          "I'll guard the keyboard while you're in the call 🐾",
+          "Teams notification sound is my alarm clock now 🔔"
+        ],
+        "priority": 5, "cooldown_minutes": 5
+      }
+    }
+  ]
+}

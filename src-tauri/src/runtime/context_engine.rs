@@ -1,11 +1,6 @@
 use chrono::Timelike;
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-}
+use crate::util::now_secs;
 
 pub(crate) fn is_coding_app(app: &str) -> bool {
     let lower = app.to_lowercase();

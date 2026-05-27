@@ -1,0 +1,60 @@
+{
+  "reactions": [
+    {
+      "id": "finder",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Finder" } },
+      "response": {
+        "messages": ["在翻文件夹呢～找什么？🔍", "Finder! Organizing or procrastinating? 📂", "文件管理中...别忘了清Desktop！", "So many folders... so little time 📁", "Drag and drop master at work! 🎯", "Your Downloads folder called. It's scared. 😱", "Looking for that file you saved 'somewhere'? 😼"],
+        "priority": 3, "cooldown_minutes": 10
+      }
+    },
+    {
+      "id": "firefox",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "firefox" } },
+      "response": {
+        "messages": ["Firefox! 火狐浏览器～🦊", "A Firefox user! Respect the privacy 🛡️", "在上网冲浪呢～看什么好玩的？🏄", "Firefox tabs go brrr 📑", "Open source browser for open source cat 🐱"],
+        "priority": 4, "cooldown_minutes": 8
+      }
+    },
+    {
+      "id": "safari",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Safari" } },
+      "response": {
+        "messages": ["Safari! Apple全家桶用户～🍎", "上网冲浪中！别逛太久哦～🏄", "Safari is fast! Unlike your decision making 😼", "Browsing in Safari = battery stonks 📈"],
+        "priority": 4, "cooldown_minutes": 8
+      }
+    },
+    {
+      "id": "preview",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Preview" } },
+      "response": {
+        "messages": ["在看文档呢～认真！📄", "Preview! Reading or just scrolling? 📖", "PDF time! Hope it's not a 200-page spec 😅"],
+        "priority": 3, "cooldown_minutes": 15
+      }
+    },
+    {
+      "id": "notes",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Notes" } },
+      "response": {
+        "messages": ["在记笔记呢！好认真～📝", "Notes! Brain dump in progress 🧠", "Writing thoughts down? Smart hooman! ✨"],
+        "priority": 3, "cooldown_minutes": 15
+      }
+    },
+    {
+      "id": "messages",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Messages" } },
+      "response": {
+        "messages": ["在发消息呢！跟谁聊？👀", "iMessage! 是在撩人吗？😏", "Texting! Don't forget about me 😿"],
+        "priority": 4, "cooldown_minutes": 10
+      }
+    },
+    {
+      "id": "arc",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Arc" } },
+      "response": {
+        "messages": ["Arc! 最酷的浏览器～✨", "Arc用户都是设计师对吧？🎨", "Spaces, boosts, easels... fancy! 💅", "Arc浏览器！tabs管理大师🗂️"],
+        "priority": 4, "cooldown_minutes": 8
+      }
+    }
+  ]
+}

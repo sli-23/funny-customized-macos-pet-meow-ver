@@ -40,12 +40,7 @@ impl MeowEvent {
     }
 }
 
-fn now_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
-}
+use crate::util::now_ms;
 
 #[derive(Clone)]
 pub struct EventBus {
@@ -79,10 +74,36 @@ impl EventBus {
     }
 
     #[allow(dead_code)]
+    pub fn subscribe_filtered(&self, event_types: Vec<EventType>) -> FilteredReceiver {
+        FilteredReceiver {
+            inner: self.sender.subscribe(),
+            filter: event_types,
+        }
+    }
+
+    #[allow(dead_code)]
     pub async fn recent_events(&self, limit: usize) -> Vec<MeowEvent> {
         let history = self.history.read().await;
         let start = history.len().saturating_sub(limit);
         history[start..].to_vec()
+    }
+}
+
+#[allow(dead_code)]
+pub struct FilteredReceiver {
+    inner: broadcast::Receiver<MeowEvent>,
+    filter: Vec<EventType>,
+}
+
+#[allow(dead_code)]
+impl FilteredReceiver {
+    pub async fn recv(&mut self) -> Result<MeowEvent, broadcast::error::RecvError> {
+        loop {
+            let event = self.inner.recv().await?;
+            if self.filter.contains(&event.event_type) {
+                return Ok(event);
+            }
+        }
     }
 }
 

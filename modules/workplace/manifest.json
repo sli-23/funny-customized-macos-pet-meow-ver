@@ -1,0 +1,15 @@
+{
+    "id": "workplace",
+    "name": "Workplace",
+    "version": "1.0.0",
+    "description": "Reacts when you are in Slack, Zoom, Chime, or Teams meetings",
+    "author": "ClaudeMeow",
+    "icon": "💼",
+    "builtin": true,
+    "permissions": [
+        "active_app"
+    ],
+    "eventSubscriptions": [
+        "active_app_changed"
+    ]
+}

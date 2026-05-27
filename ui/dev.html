@@ -2,136 +2,20 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            background: transparent;
-            font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
-            height: 100%;
-            overflow: hidden;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background: rgba(13, 17, 23, 0.88);
-            border-radius: 10px;
-            border: 1px solid rgba(48, 54, 61, 0.6);
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .titlebar {
-            height: 28px;
-            min-height: 28px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            cursor: grab;
-            border-bottom: 1px solid rgba(48, 54, 61, 0.4);
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .titlebar:active { cursor: grabbing; }
-        .titlebar h1 {
-            font-size: 10px;
-            font-weight: 600;
-            color: #58a6ff;
-        }
-        .btn-clear {
-            font-size: 9px;
-            padding: 2px 8px;
-            background: rgba(33, 38, 45, 0.8);
-            color: #8b949e;
-            border: 1px solid rgba(48, 54, 61, 0.6);
-            border-radius: 3px;
-            cursor: pointer;
-            font-family: monospace;
-        }
-        .btn-clear:hover { background: rgba(48, 54, 61, 0.8); color: #c9d1d9; }
-        .log-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 6px 10px;
-            font-size: 10px;
-            line-height: 1.6;
-            color: #c9d1d9;
-            user-select: text;
-            -webkit-user-select: text;
-            cursor: text;
-        }
-        .log-area::-webkit-scrollbar { width: 4px; }
-        .log-area::-webkit-scrollbar-thumb { background: rgba(48, 54, 61, 0.6); border-radius: 2px; }
-        .log-area::-webkit-scrollbar-track { background: transparent; }
-        .log-entry {
-            padding: 1px 0;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .log-time { color: #484f58; }
-        .log-tag { font-weight: bold; }
-        .log-tag.event { color: #58a6ff; }
-        .log-tag.reaction { color: #3fb950; }
-        .log-tag.skip { color: #d29922; }
-        .log-tag.error { color: #f85149; }
-        .log-tag.url { color: #bc8cff; }
-        .log-msg { color: #c9d1d9; }
-    </style>
+    <link rel="stylesheet" href="css/dev.css">
 </head>
 <body>
     <div class="container">
         <div class="titlebar" data-tauri-drag-region>
             <h1 data-tauri-drag-region>> dev</h1>
-            <button class="btn-clear" onclick="clearLog()">clear</button>
+            <div style="display:flex;gap:4px;">
+                <button class="btn-clear" onclick="triggerCR()">gossip</button>
+                <button class="btn-clear" onclick="triggerMeme()">meme</button>
+            </div>
         </div>
         <div class="log-area" id="logArea"></div>
+        <div class="cat-status" id="catStatus">😴 趴着睡觉中...</div>
     </div>
-
-    <script>
-        const logArea = document.getElementById('logArea');
-
-        function addLog(tag, tagClass, msg) {
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2,'0') + ':' +
-                         now.getMinutes().toString().padStart(2,'0') + ':' +
-                         now.getSeconds().toString().padStart(2,'0');
-
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `<span class="log-time">${time}</span> <span class="log-tag ${tagClass}">[${tag}]</span> <span class="log-msg">${escapeHtml(msg)}</span>`;
-            logArea.appendChild(entry);
-            logArea.scrollTop = logArea.scrollHeight;
-
-            while (logArea.children.length > 200) {
-                logArea.removeChild(logArea.firstChild);
-            }
-        }
-
-        function clearLog() { logArea.innerHTML = ''; }
-
-        function escapeHtml(t) {
-            if (!t) return '';
-            const d = document.createElement('div');
-            d.textContent = t;
-            return d.innerHTML;
-        }
-
-        if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.transformCallback) {
-            window.__TAURI_INTERNALS__.invoke('plugin:event|listen', {
-                event: 'dev-log',
-                target: { kind: 'Any' },
-                handler: window.__TAURI_INTERNALS__.transformCallback((event) => {
-                    const data = event.payload;
-                    if (data) {
-                        addLog(data.tag || 'INFO', data.tag_class || 'event', data.message || '');
-                    }
-                })
-            });
-        }
-
-        addLog('SYS', 'event', 'dev console ready');
-    </script>
+    <script type="module" src="js/dev.js"></script>
 </body>
 </html>

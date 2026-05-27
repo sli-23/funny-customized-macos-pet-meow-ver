@@ -19,7 +19,41 @@ pub struct AppConfig {
     pub openai_api_key: String,
     pub anthropic_model_id: String,
     pub openai_model_id: String,
+    // Bubble behavior
+    #[serde(default = "default_bubble_duration")]
+    pub bubble_duration_secs: u32,
+    #[serde(default = "default_idle_gap")]
+    pub idle_gap_minutes: u32,
+    #[serde(default = "default_reaction_cooldown")]
+    pub reaction_cooldown_secs: u32,
+    // Pet personality
+    #[serde(default = "default_chattiness")]
+    pub chattiness: u8,
+    #[serde(default = "default_language_mix")]
+    pub language_mix: String,
+    #[serde(default = "default_sass_level")]
+    pub sass_level: u8,
+    // Health reminders
+    #[serde(default = "default_true")]
+    pub health_enabled: bool,
+    #[serde(default = "default_health_interval")]
+    pub health_interval_minutes: u32,
+    #[serde(default = "default_quiet_start")]
+    pub quiet_hours_start: u8,
+    #[serde(default = "default_quiet_end")]
+    pub quiet_hours_end: u8,
 }
+
+fn default_bubble_duration() -> u32 { 30 }
+fn default_idle_gap() -> u32 { 3 }
+fn default_reaction_cooldown() -> u32 { 10 }
+fn default_chattiness() -> u8 { 3 }
+fn default_language_mix() -> String { "bilingual".to_string() }
+fn default_sass_level() -> u8 { 3 }
+fn default_true() -> bool { true }
+fn default_health_interval() -> u32 { 15 }
+fn default_quiet_start() -> u8 { 23 }
+fn default_quiet_end() -> u8 { 8 }
 
 impl Default for AppConfig {
     fn default() -> Self {
@@ -55,16 +89,22 @@ Format: "hooman, drink water~" or "铲屎官, 坐直啦！" — never use colon 
             openai_api_key: String::new(),
             anthropic_model_id: "claude-haiku-4-5-20251001".to_string(),
             openai_model_id: "gpt-4o-mini".to_string(),
+            bubble_duration_secs: 30,
+            idle_gap_minutes: 3,
+            reaction_cooldown_secs: 10,
+            chattiness: 3,
+            language_mix: "bilingual".to_string(),
+            sass_level: 3,
+            health_enabled: true,
+            health_interval_minutes: 15,
+            quiet_hours_start: 23,
+            quiet_hours_end: 8,
         }
     }
 }
 
 fn config_path() -> PathBuf {
-    let config_dir = dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("claude-meow-pet");
-    fs::create_dir_all(&config_dir).ok();
-    config_dir.join("config.json")
+    crate::paths::config_dir().join("config.json")
 }
 
 fn migrate(mut config: AppConfig) -> AppConfig {
@@ -100,10 +140,17 @@ pub fn save_config(config: &AppConfig) {
 
 pub(crate) fn save_config_to(config: &AppConfig, path: &PathBuf) {
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).ok();
+        if let Err(e) = fs::create_dir_all(parent) {
+            eprintln!("[ClaudeMeow] config dir create failed: {}", e);
+        }
     }
-    if let Ok(data) = serde_json::to_string_pretty(config) {
-        fs::write(path, data).ok();
+    match serde_json::to_string_pretty(config) {
+        Ok(data) => {
+            if let Err(e) = fs::write(path, data) {
+                eprintln!("[ClaudeMeow] config save failed: {}", e);
+            }
+        }
+        Err(e) => eprintln!("[ClaudeMeow] config serialize failed: {}", e),
     }
 }
 

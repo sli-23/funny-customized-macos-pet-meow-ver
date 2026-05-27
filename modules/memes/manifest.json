@@ -1,0 +1,11 @@
+{
+    "id": "memes",
+    "name": "Memes",
+    "version": "1.0.0",
+    "description": "Shows random meme images in the bubble",
+    "author": "ClaudeMeow",
+    "icon": "🖼",
+    "builtin": true,
+    "permissions": [],
+    "eventSubscriptions": []
+}

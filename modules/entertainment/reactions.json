@@ -1,0 +1,56 @@
+{
+  "reactions": [
+    {
+      "id": "youtube",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "youtube" } },
+      "response": {
+        "messages": [
+          "又在看YouTube！摸鱼被我抓到了！🐟",
+          "YouTube...是在学习对吧？对吧？😼",
+          "一个视频变成了三个小时...我懂的📺",
+          "Just one more video... said everyone ever 🎬",
+          "The algorithm got you again didn't it 😏"
+        ],
+        "priority": 3, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "reddit",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "reddit" } },
+      "response": {
+        "messages": ["Reddit! 又在刷帖子了！🐟", "在Reddit潜水呢...冒个泡！🫧", "别刷了！回来和我玩！", "Down the Reddit rabbit hole again? 🕳", "r/cats is the only acceptable subreddit btw 🐱"],
+        "priority": 3, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "twitter",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "twitter" } },
+      "response": {
+        "messages": ["刷推了！有什么热搜告诉我！🐦", "又在看推特...有猫猫视频吗？😸", "Twitter scrolling: the modern meditation 🧘", "280 characters can't capture my beauty anyway 😼"],
+        "priority": 3, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "bilibili",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "bilibili" } },
+      "response": {
+        "messages": ["B站! 又在看番了！三连了没？📺", "bilibili...弹幕好热闹！🐟", "看B站呢！什么视频？好看吗？", "投币投币！一键三连！😸"],
+        "priority": 3, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "spotify",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Spotify" } },
+      "response": {
+        "messages": [
+          "Spotify! 听什么歌呢？推荐给我听！🎵",
+          "音乐时间！品味不错嘛～🎶",
+          "边听歌边工作～完美combo！🎧",
+          "Your playlist says a lot about you... I approve 🐱",
+          "If cats could DJ... actually we'd just knock the turntable off 😼"
+        ],
+        "priority": 4, "cooldown_minutes": 5
+      }
+    }
+  ]
+}

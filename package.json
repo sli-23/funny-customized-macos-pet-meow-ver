@@ -1,8 +1,12 @@
 {
   "name": "claude-meow-pet",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "description": "A pixel art cat desktop pet powered by Claude",
   "scripts": {
-    "tauri": "cargo tauri"
+    "dev": "cd src-tauri && cargo run",
+    "build": "cd src-tauri && cargo tauri build",
+    "test": "cd src-tauri && cargo test",
+    "lint": "cd src-tauri && cargo clippy",
+    "fmt": "cd src-tauri && cargo fmt -- --check"
   }
 }

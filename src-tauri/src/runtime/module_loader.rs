@@ -267,10 +267,7 @@ impl ModuleLoader {
 }
 
 pub fn user_modules_dir() -> PathBuf {
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("ClaudeMeow")
-        .join("modules")
+    crate::paths::modules_user_dir()
 }
 
 pub fn default_modules_dir() -> PathBuf {
@@ -300,10 +297,7 @@ pub fn default_modules_dir() -> PathBuf {
     }
 
     // Final fallback: Library/Application Support
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("ClaudeMeow")
-        .join("modules")
+    crate::paths::modules_user_dir()
 }
 
 #[cfg(test)]

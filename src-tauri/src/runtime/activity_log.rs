@@ -92,7 +92,9 @@ impl ActivityLogger {
             })
             .collect();
 
-        fs::write(&self.log_path, kept.join("\n") + if kept.is_empty() { "" } else { "\n" }).ok();
+        if let Err(e) = fs::write(&self.log_path, kept.join("\n") + if kept.is_empty() { "" } else { "\n" }) {
+            eprintln!("[ClaudeMeow] activity log prune failed: {}", e);
+        }
     }
 
     fn check_size_limit(&self) {
@@ -113,16 +115,13 @@ impl ActivityLogger {
         let lines: Vec<String> = reader.lines().flatten().collect();
         let half = lines.len() / 2;
         let kept = &lines[half..];
-        fs::write(&self.log_path, kept.join("\n") + "\n").ok();
+        if let Err(e) = fs::write(&self.log_path, kept.join("\n") + "\n") {
+            eprintln!("[ClaudeMeow] activity log truncate failed: {}", e);
+        }
     }
 }
 
-fn now_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
-}
+use crate::util::now_ms;
 
 #[cfg(test)]
 mod tests {

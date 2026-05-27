@@ -84,7 +84,9 @@ impl ChatHistory {
         } else {
             kept.join("\n") + "\n"
         };
-        fs::write(&self.path, content).ok();
+        if let Err(e) = fs::write(&self.path, content) {
+            eprintln!("[ClaudeMeow] chat history prune failed: {}", e);
+        }
     }
 
     fn check_size_limit(&self) {
@@ -102,7 +104,9 @@ impl ChatHistory {
         };
         let lines: Vec<String> = BufReader::new(file).lines().flatten().collect();
         let half = lines.len() / 2;
-        fs::write(&self.path, lines[half..].join("\n") + "\n").ok();
+        if let Err(e) = fs::write(&self.path, lines[half..].join("\n") + "\n") {
+            eprintln!("[ClaudeMeow] chat history truncate failed: {}", e);
+        }
     }
 }
 
@@ -119,12 +123,7 @@ pub(crate) fn format_turns(turns: &[ChatTurn]) -> String {
     lines.join("\n")
 }
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-}
+use crate::util::now_secs;
 
 #[cfg(test)]
 mod tests {

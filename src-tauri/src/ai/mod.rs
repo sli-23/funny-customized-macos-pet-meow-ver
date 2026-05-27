@@ -11,9 +11,7 @@ use provider::{
 use serde_json::json;
 
 pub(crate) fn data_dir() -> PathBuf {
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("ClaudeMeow")
+    crate::paths::data_dir()
 }
 
 pub fn build_provider(config: &AppConfig) -> Box<dyn AiProvider + Send + Sync> {

@@ -1,40 +1,31 @@
-use std::process::Command;
+use crate::platform::{self, Platform};
 
 pub fn get_context() -> String {
-    let running = Command::new("osascript")
-        .arg("-e")
-        .arg(r#"tell application "System Events" to (name of processes) contains "zoom.us""#)
-        .output();
+    let plat = platform::native();
 
-    match running {
-        Ok(out) if String::from_utf8_lossy(&out.stdout).trim() == "true" => {
-            let meeting = Command::new("osascript")
-                .arg("-e")
-                .arg(r#"tell application "System Events"
-                    tell process "zoom.us"
-                        set winNames to name of every window
-                        set output to ""
-                        repeat with w in winNames
-                            set output to output & w & ", "
-                        end repeat
-                        return output
-                    end tell
-                end tell"#)
-                .output();
-            match meeting {
-                Ok(out) => {
-                    let info = String::from_utf8_lossy(&out.stdout).trim().to_string();
-                    if info.contains("Meeting") || info.contains("Zoom Meeting") || info.contains("meeting") {
-                        "Zoom: in a meeting".to_string()
-                    } else if info.is_empty() {
-                        "Zoom: running (no meeting)".to_string()
-                    } else {
-                        format!("Zoom: running ({})", info.trim_end_matches(", "))
-                    }
-                }
-                Err(_) => "Zoom: running".to_string(),
+    if !plat.is_process_running("zoom.us") {
+        return "Zoom: not running".to_string();
+    }
+
+    let script = r#"tell application "System Events"
+        tell process "zoom.us"
+            set winNames to name of every window
+            set output to ""
+            repeat with w in winNames
+                set output to output & w & ", "
+            end repeat
+            return output
+        end tell
+    end tell"#;
+
+    match plat.run_applescript(script) {
+        Some(info) => {
+            if info.contains("Meeting") || info.contains("Zoom Meeting") || info.contains("meeting") {
+                "Zoom: in a meeting".to_string()
+            } else {
+                format!("Zoom: running ({})", info.trim_end_matches(", "))
             }
         }
-        _ => "Zoom: not running".to_string(),
+        None => "Zoom: running (no meeting)".to_string(),
     }
 }

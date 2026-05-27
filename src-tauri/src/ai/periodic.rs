@@ -17,17 +17,33 @@ pub(crate) fn build_periodic_prompt(
         format!("\n\nRecent chat with user:\n{}", recent_chat)
     };
 
+    let lang_instruction = match crate::config::load_config().language_mix.as_str() {
+        "chinese" => "\nLanguage: Reply ONLY in Chinese.",
+        "english" => "\nLanguage: Reply ONLY in English.",
+        _ => "",
+    };
     format!(
-        "Current context:\n{}\n{}\n\nPet personality context:\n{}{}\n\nRules: React based on the personality context above. If [Mood: cautious], be gentle. If [Streak], mention it. If [typing], comment on typing. If Spotify is playing, comment on the song.\nGenerate ONE short cute cat message (under 40 chars). Be playful like a real cat. NEVER reply with just a single word or sound. Always include context about what they're doing:",
-        context, time_ctx, pet_ctx, chat_section
+        "Current context:\n{}\n{}\n\nPet personality context:\n{}{}\n\nRules: React based on the personality context above. If [Mood: cautious], be gentle. If [Streak], mention it. If [typing], comment on typing. If Spotify is playing, comment on the song.{}\nGenerate ONE short cute cat message (under 40 chars). Be playful like a real cat. NEVER reply with just a single word or sound. Always include context about what they're doing:",
+        context, time_ctx, pet_ctx, chat_section, lang_instruction
     )
 }
 
 #[tauri::command]
 pub async fn generate_message(app: tauri::AppHandle, context: String) -> Result<String, String> {
+    use crate::runtime::memory;
+
     let config = load_config();
     let hour = local_hour();
     let time_context = build_time_context(hour);
+    let time_bucket = memory::get_time_bucket(hour);
+
+    // Check message cache first (reduce API calls)
+    let context_key = memory::build_context_key(&context, time_bucket);
+    if let Some(cached) = memory::check_message_cache(&context_key) {
+        if !memory::is_theme_blocked(&cached) {
+            return Ok(cached);
+        }
+    }
 
     let pet_context = {
         let state = app.state::<RuntimeState>();
@@ -38,9 +54,27 @@ pub async fn generate_message(app: tauri::AppHandle, context: String) -> Result<
     let history = ChatHistory::new(data_dir());
     let recent_chat = history.format_for_prompt(3);
 
-    let user_prompt = build_periodic_prompt(&context, &time_context, &pet_context, &recent_chat);
+    // Add blocked themes to prompt
+    let theme_block = memory::get_blocked_themes_for_prompt();
+    let mut user_prompt = build_periodic_prompt(&context, &time_context, &pet_context, &recent_chat);
+    if !theme_block.is_empty() {
+        user_prompt.push_str(&theme_block);
+    }
 
-    send_to_ai(&config, &user_prompt, 60, 0.9).await
+    let message = send_to_ai(&config, &user_prompt, 60, 0.9).await?;
+
+    // If theme blocked, retry once
+    if memory::is_theme_blocked(&message) {
+        let retry_prompt = format!("{}\nIMPORTANT: Say something COMPLETELY different — ask a question, make a joke, comment on something unexpected.", user_prompt);
+        let retry = send_to_ai(&config, &retry_prompt, 60, 0.95).await?;
+        memory::record_theme(&retry);
+        memory::save_to_message_cache(&context_key, &retry);
+        return Ok(retry);
+    }
+
+    memory::record_theme(&message);
+    memory::save_to_message_cache(&context_key, &message);
+    Ok(message)
 }
 
 fn local_hour() -> u32 {

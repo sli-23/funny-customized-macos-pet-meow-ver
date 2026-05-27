@@ -2,14 +2,16 @@
     "id": "coding",
     "name": "Coding",
     "version": "1.0.0",
-    "description": "Reacts to VS Code, IntelliJ, Cursor, Terminal, iTerm, Warp",
+    "description": "Reacts to IDEs, terminals, and GitHub",
     "author": "ClaudeMeow",
-    "icon": "\ud83d\udcbb",
+    "icon": "💻",
     "builtin": true,
     "permissions": [
-        "active_app"
+        "active_app",
+        "browser_url"
     ],
     "eventSubscriptions": [
-        "active_app_changed"
+        "active_app_changed",
+        "browser_url_changed"
     ]
 }

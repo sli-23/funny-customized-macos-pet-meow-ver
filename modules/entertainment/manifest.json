@@ -1,0 +1,17 @@
+{
+    "id": "entertainment",
+    "name": "Entertainment",
+    "version": "1.0.0",
+    "description": "Reacts to YouTube, Spotify, Reddit, Twitter, Bilibili",
+    "author": "ClaudeMeow",
+    "icon": "🎬",
+    "builtin": true,
+    "permissions": [
+        "browser_url",
+        "active_app"
+    ],
+    "eventSubscriptions": [
+        "browser_url_changed",
+        "active_app_changed"
+    ]
+}

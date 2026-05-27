@@ -1,0 +1,118 @@
+/* ClaudeMeow — Base: variables, reset, layout, titlebar */
+
+:root {
+    --bg-app: #F9F9F8;
+    --bg-surface: #FFFFFF;
+    --bg-panel: #FFFFFF;
+    --bg-sidebar: #F5F5F3;
+    --bg-input: #FFFFFF;
+    --bg-rail: #F5F5F3;
+    --border: #E5E5E3;
+    --border-panel: #E5E5E3;
+    --border-subtle: #EBEBEA;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B68;
+    --text-muted: #9A9A96;
+    --text-label: #7A7A76;
+    --accent: #D97757;
+    --accent-hover: #C4683F;
+    --green: #2E9E5B;
+    --green-dot: #2E9E5B;
+    --red: #C4433A;
+    --warning: #B8862B;
+    --ring: rgba(217, 119, 87, 0.12);
+    --toggle-track: #D4D4D2;
+    --toggle-active: #D97757;
+    --nav-active: #EBEBEA;
+    --nav-hover: rgba(0, 0, 0, 0.03);
+    --btn-dark: #1A1A1A;
+    --btn-dark-text: #FFFFFF;
+}
+
+.dark {
+    --bg-app: #191919;
+    --bg-surface: #1E1E1E;
+    --bg-panel: #262626;
+    --bg-sidebar: #141414;
+    --bg-input: #1A1A1A;
+    --bg-rail: #141414;
+    --border: #333333;
+    --border-panel: #383838;
+    --border-subtle: #2A2A2A;
+    --text: #ECECEC;
+    --text-secondary: #A0A0A0;
+    --text-muted: #666666;
+    --text-label: #888888;
+    --accent: #E27B56;
+    --accent-hover: #F08A64;
+    --green: #5CBB7A;
+    --green-dot: #5CBB7A;
+    --red: #E06050;
+    --warning: #D4A04A;
+    --ring: rgba(226, 123, 86, 0.12);
+    --toggle-track: #444444;
+    --toggle-active: #E27B56;
+    --nav-active: #262626;
+    --nav-hover: rgba(255, 255, 255, 0.04);
+    --btn-dark: #ECECEC;
+    --btn-dark-text: #191919;
+}
+
+/* ── Reset ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; background: var(--bg-app); border-radius: 10px; overflow: hidden; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    color: var(--text);
+    font-size: 13px;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Titlebar ── */
+.titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding-left: 110px;
+    gap: 8px;
+    background: var(--bg-app);
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: 100;
+    -webkit-app-region: drag;
+}
+.titlebar-name {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.2px;
+}
+.titlebar-label {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ── Layout ── */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr 220px;
+    grid-template-rows: 1fr;
+    height: calc(100% - 40px);
+    margin-top: 40px;
+    overflow: hidden;
+}
+
+/* ── Responsive ── */
+@media (max-width: 780px) {
+    .settings-layout { grid-template-columns: 200px 1fr; }
+    .status-rail { display: none; }
+}

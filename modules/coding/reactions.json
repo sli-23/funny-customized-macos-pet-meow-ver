@@ -4,7 +4,7 @@
       "id": "vscode",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Code" } },
       "response": {
-        "messages": ["写代码呢！加油～💪 (=^･ω･^=)", "Coding中！记得喝水哦～💧", "好认真在写代码！厉害！✨", "Bug写完了吗？嘻嘻～😸", "IDE打开了！今天写什么呢？"],
+        "messages": ["写代码呢！加油～💪", "Bug写完了吗？嘻嘻～😸", "IDE打开了！今天写什么呢？", "Coding time! Your keyboard sounds like rain 🌧", "The cursor blinks... waiting for genius... any moment now 😼", "又在refactor了？别越改越多哦～", "git commit -m 'cat approved' 🐾", "记得save！万一crash了呢！💾", "Code review自己的代码...嗯...完美！😸", "Compile成功了吗？我帮你祈祷🙏", "Tab还是Space？这是个哲学问题🤔", "写得好认真！摸摸头～🐾", "That's a lot of red squiggly lines... just saying 🔴", "stackoverflow.com in 3... 2... 1... 😼", "You've been staring at that function for 5 min. Blink. 👁", "Is that a TODO or a NEVER-DO? Be honest 📝", "Your code compiles? Suspicious. Very suspicious. 🕵️"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -12,7 +12,7 @@
       "id": "kiro",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Kiro" } },
       "response": {
-        "messages": ["Kiro! Amazon的IDE！在写代码呢～💪", "用Kiro开发中！加油！✨", "Kiro打开了！今天build什么？", "在Kiro里coding！好认真！(=^･ω･^=)"],
+        "messages": ["Kiro! Amazon的IDE！在搞什么大事？💪", "Kiro + AI = you're basically cheating 🤖", "An IDE with AI? What am I, chopped liver? 🐟", "Kiro spotted! Must be serious Amazon business 🎯", "又在Kiro里build东西了！ship it! 🚀", "Kiro的AI帮你写代码...那我负责卖萌🐱", "Two AIs helping you code and you still have bugs? 😼", "Kiro loading... still faster than IntelliJ tho 💅", "Amazon IDE activated! Bezos would be proud 📦", "Your Kiro tab count is concerning. Just saying. 👀", "Type type type... are you racing the AI? 🏎️", "Kiro聊天记录比你的Slack还长了吧 😹"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -20,7 +20,7 @@
       "id": "intellij",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "IntelliJ" } },
       "response": {
-        "messages": ["IntelliJ! Java大佬！☕", "在写Java呢！加油～", "IDE好重...电脑还好吗？😅"],
+        "messages": ["IntelliJ! Java大佬降临！☕", "IDE好重...电脑在叫了你听到没？😅", "IntelliJ! The heavyweight champion of IDEs 🏋️", "Loading... loading... still loading... classic IntelliJ 😴"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -28,7 +28,7 @@
       "id": "cursor",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Cursor" } },
       "response": {
-        "messages": ["Cursor! AI辅助写代码中～🤖", "用AI写代码呢！效率up！✨", "Cursor打开了！今天pair programming！"],
+        "messages": ["Cursor! AI帮你写代码～那我呢？🤖", "用AI写代码效率up！记得review哦✨", "Cursor + you = unstoppable! (I'm just watching) 👀", "AI pair programming! The future is meow 🐱"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -36,7 +36,7 @@
       "id": "terminal",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Terminal" } },
       "response": {
-        "messages": ["Terminal! 命令行大师！🖥", "在用终端...在deploy吗？", "黑客模式启动！😎", "命令行噼里啪啦～酷！"],
+        "messages": ["Terminal! 黑客模式启动！😎", "命令行噼里啪啦～好帅！", "Ooh mysterious dark screen with green text! 🖥", "sudo give-me-treats 🐟"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -44,7 +44,7 @@
       "id": "iterm",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "iTerm" } },
       "response": {
-        "messages": ["iTerm! 终端达人！🖥", "又在terminal里折腾什么呢？", "命令行的世界！加油！💪"],
+        "messages": ["iTerm! 终端达人上线！🖥", "又在terminal里折腾什么呢？", "iTerm tabs: 47. Closed: 0. Classic. 📂", "Your terminal history is basically a diary at this point 📖"],
         "priority": 5, "cooldown_minutes": 5
       }
     },
@@ -52,8 +52,16 @@
       "id": "warp",
       "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Warp" } },
       "response": {
-        "messages": ["Warp终端！好酷的工具～✨", "在Warp里写命令呢！", "AI终端！未来感～🚀"],
+        "messages": ["Warp终端！未来感满满～🚀", "AI终端！两个AI一起工作啦✨", "Warp speed activated! To infinity and beyond! 🚀", "Fancy terminal! Does it come with a cat mode? 🐱"],
         "priority": 5, "cooldown_minutes": 5
+      }
+    },
+    {
+      "id": "github",
+      "trigger": { "event": "browser_url_changed", "condition": { "field": "site", "contains": "github" } },
+      "response": {
+        "messages": ["GitHub! 今天commit了几次？💪", "在看PR呢！别approve太快哦～👀", "Review code中...发现bug了吗？🐛", "GitHub green squares! Gotta collect 'em all! 🟩", "PR review time! Channel your inner critic 😼"],
+        "priority": 6, "cooldown_minutes": 5
       }
     }
   ]

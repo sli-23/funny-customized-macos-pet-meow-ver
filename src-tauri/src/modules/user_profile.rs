@@ -19,9 +19,7 @@ pub struct MeowProfile {
 }
 
 fn config_dir() -> PathBuf {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("claude-meow-pet")
+    crate::paths::config_dir()
 }
 
 fn profile_path() -> PathBuf {

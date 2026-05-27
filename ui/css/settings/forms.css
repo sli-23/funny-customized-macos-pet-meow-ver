@@ -1,0 +1,299 @@
+/* ClaudeMeow — Forms: inputs, selects, toggles, buttons, chips */
+
+.form-group { margin-bottom: 14px; }
+.form-group:last-child { margin-bottom: 0; }
+
+label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+    font-size: 12px;
+}
+
+input, select, textarea {
+    width: 100%;
+    height: 36px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color 0.12s, box-shadow 0.12s;
+}
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--text-muted);
+    box-shadow: 0 0 0 2px var(--ring);
+}
+input.mono {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+textarea {
+    height: 100px;
+    resize: vertical;
+    line-height: 1.5;
+    padding: 10px 12px;
+}
+select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%239B9388' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 28px;
+}
+.dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23716A60' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+}
+
+.row { display: flex; gap: 12px; }
+.row .form-group { flex: 1; }
+
+.input-row { display: flex; gap: 8px; align-items: center; }
+.input-row input { flex: 1; }
+
+/* ── Toggle ── */
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+}
+.toggle input[type="checkbox"] {
+    width: 36px;
+    height: 20px;
+    min-width: 36px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--toggle-track);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    padding: 0;
+}
+.toggle input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.toggle input[type="checkbox"]:checked { background: var(--toggle-active); }
+.toggle input[type="checkbox"]:checked::after { transform: translateX(16px); }
+.toggle input[type="checkbox"]:focus { outline: none; }
+.toggle label {
+    margin: 0;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 400;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-secondary {
+    height: 32px;
+    padding: 0 14px;
+    font-size: 12px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+.btn-secondary:hover { background: var(--accent); color: #FFFFFF; }
+.btn-secondary:active { transform: scale(0.97); }
+
+.btn-danger {
+    height: 32px;
+    padding: 0 16px;
+    font-size: 12px;
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+.btn-danger:hover { background: var(--red); color: #FFFFFF; }
+.btn-danger:active { transform: scale(0.97); }
+
+.danger-section {
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: rgba(196, 67, 58, 0.03);
+}
+.dark .danger-section {
+    background: rgba(224, 96, 80, 0.04);
+}
+.danger-section .section-title {
+    color: var(--red);
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 8px;
+}
+
+/* ── Chips ── */
+.chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, margin 0.3s ease, opacity 0.2s ease;
+    max-height: 0;
+    margin-bottom: 0;
+    opacity: 0;
+}
+.chip-container.has-chips {
+    max-height: 200px;
+    margin-bottom: 10px;
+    opacity: 1;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+    animation: chipIn 0.2s ease;
+}
+@keyframes chipIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+.chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+.chip-remove:hover {
+    background: var(--red);
+    color: #fff;
+}
+.chip-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.chip-input {
+    flex: 1;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+}
+.chip-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--ring);
+}
+.chip-input::placeholder { color: var(--text-muted); }
+
+/* ── Status ── */
+.test-status { font-size: 11px; margin-top: 6px; min-height: 14px; }
+.test-status.success { color: var(--green); }
+.test-status.error { color: var(--red); }
+.test-status.loading { color: var(--text-muted); }
+
+/* ── Keyboard hint ── */
+.shortcut-hint { margin-top: 14px; font-size: 11px; color: var(--text-muted); }
+.shortcut-hint kbd,
+.shortcut-keys kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+/* ── Shortcut rows (info page) ── */
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.shortcut-row:last-child { border-bottom: none; }
+.shortcut-keys {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.shortcut-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ── Inline code ── */
+code {
+    font-size: 11px;
+    background: rgba(217, 119, 87, 0.08);
+    border: 1px solid rgba(217, 119, 87, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    color: var(--accent);
+    font-weight: 500;
+}
+.dark code {
+    background: rgba(226, 123, 86, 0.10);
+    border-color: rgba(226, 123, 86, 0.18);
+}

@@ -1,36 +1,23 @@
-use std::process::Command;
+use crate::platform::{self, Platform};
 
 pub fn get_context() -> String {
-    let window = get_active_window();
-    let category = categorize_activity(&window);
-    let typing = is_typing();
+    let plat = platform::native();
+    let window = plat.get_active_window();
+    let parts: Vec<&str> = window.splitn(2, " - ").collect();
+    let app_name = parts.first().unwrap_or(&"");
+    let is_self = app_name.eq_ignore_ascii_case("claude-meow-pet")
+        || app_name.eq_ignore_ascii_case("ClaudeMeow");
+    let filtered = if is_self {
+        "Unknown".to_string()
+    } else {
+        window
+    };
+    let category = categorize_activity(&filtered);
+    let typing = plat.is_typing();
     if typing {
         format!("{} [typing]", category)
     } else {
         category
-    }
-}
-
-fn is_typing() -> bool {
-    let output = Command::new("ioreg")
-        .args(["-c", "IOHIDSystem"])
-        .output();
-    match output {
-        Ok(out) => {
-            let text = String::from_utf8_lossy(&out.stdout);
-            for line in text.lines() {
-                if line.contains("HIDIdleTime") {
-                    if let Some(val) = line.split_whitespace().last() {
-                        if let Ok(ns) = val.parse::<u64>() {
-                            // < 1 second idle = actively inputting (keyboard or mouse)
-                            return ns / 1_000_000_000 < 1;
-                        }
-                    }
-                }
-            }
-            false
-        }
-        Err(_) => false,
     }
 }
 
@@ -65,24 +52,13 @@ pub fn categorize_activity(raw: &str) -> String {
     format!("Other ({})", raw)
 }
 
+pub fn is_typing() -> bool {
+    let plat = platform::native();
+    plat.is_typing()
+}
+
 #[tauri::command]
 pub fn get_active_window() -> String {
-    let output = Command::new("osascript")
-        .arg("-e")
-        .arg(r#"tell application "System Events"
-            set frontApp to name of first application process whose frontmost is true
-            set windowTitle to ""
-            try
-                tell process frontApp
-                    set windowTitle to name of front window
-                end tell
-            end try
-            return frontApp & " - " & windowTitle
-        end tell"#)
-        .output();
-
-    match output {
-        Ok(out) => String::from_utf8_lossy(&out.stdout).trim().to_string(),
-        Err(_) => "Unknown".to_string(),
-    }
+    let plat = platform::native();
+    plat.get_active_window()
 }

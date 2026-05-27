@@ -18,6 +18,14 @@ pub struct FiredReaction {
     pub priority: u8,
 }
 
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub enum EvalResult {
+    Fired(FiredReaction),
+    OnCooldown { module_id: String, reaction_id: String },
+    NoMatch,
+}
+
 #[derive(Serialize, Deserialize)]
 struct PersistedCooldown {
     last_fired: u64,
@@ -30,10 +38,7 @@ struct CooldownEntry {
 }
 
 fn cooldowns_path() -> PathBuf {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("claude-meow-pet")
-        .join("cooldowns.json")
+    crate::paths::config_dir().join("cooldowns.json")
 }
 
 fn load_cooldowns_from_disk() -> HashMap<String, CooldownEntry> {
@@ -57,7 +62,11 @@ fn load_cooldowns_from_disk() -> HashMap<String, CooldownEntry> {
 pub struct ReactionEngine {
     event_bus: EventBus,
     cooldowns: Arc<RwLock<HashMap<String, CooldownEntry>>>,
+    cooldowns_dirty: Arc<RwLock<bool>>,
+    recent_messages: Arc<RwLock<Vec<String>>>,
 }
+
+const RECENT_HISTORY_SIZE: usize = 10;
 
 impl ReactionEngine {
     pub fn new(event_bus: EventBus) -> Self {
@@ -65,6 +74,8 @@ impl ReactionEngine {
         Self {
             event_bus,
             cooldowns: Arc::new(RwLock::new(cooldowns)),
+            cooldowns_dirty: Arc::new(RwLock::new(false)),
+            recent_messages: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
@@ -79,7 +90,9 @@ impl ReactionEngine {
             }))
             .collect();
         if let Ok(data) = serde_json::to_string(&map) {
-            fs::write(cooldowns_path(), data).ok();
+            if let Err(e) = fs::write(cooldowns_path(), data) {
+                eprintln!("[ClaudeMeow] cooldowns save failed: {}", e);
+            }
         }
     }
 
@@ -88,11 +101,29 @@ impl ReactionEngine {
         event: &MeowEvent,
         modules: &[(&LoadedModule, &Reaction)],
     ) -> Option<FiredReaction> {
+        match self.evaluate_detailed(event, modules).await {
+            EvalResult::Fired(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub async fn evaluate_detailed(
+        &self,
+        event: &MeowEvent,
+        modules: &[(&LoadedModule, &Reaction)],
+    ) -> EvalResult {
         let now = now_ms();
         let mut candidates: Vec<FiredReaction> = Vec::new();
+        let mut blocked_by_cooldown: Option<(String, String)> = None;
+
+        let overrides = load_priority_overrides();
 
         for (module, reaction) in modules {
             if module.status != ModuleStatus::Active {
+                continue;
+            }
+
+            if !module_has_permission_for_event(module, &event.event_type) {
                 continue;
             }
 
@@ -102,15 +133,26 @@ impl ReactionEngine {
 
             let cooldown_key = format!("{}::{}", module.manifest.id, reaction.id);
             if self.is_on_cooldown(&cooldown_key, now).await {
+                if blocked_by_cooldown.is_none() {
+                    blocked_by_cooldown = Some((module.manifest.id.clone(), reaction.id.clone()));
+                }
                 continue;
             }
 
-            let message = pick_random(&reaction.response.messages);
+            let effective_priority = if let Some(&level) = overrides.get(&module.manifest.id) {
+                level_to_priority(level)
+            } else {
+                reaction.response.priority
+            };
+
+            let recent = self.recent_messages.read().await;
+            let message = pick_avoiding_recent(&reaction.response.messages, &recent);
+            drop(recent);
             candidates.push(FiredReaction {
                 module_id: module.manifest.id.clone(),
                 reaction_id: reaction.id.clone(),
                 message,
-                priority: reaction.response.priority,
+                priority: effective_priority,
             });
         }
 
@@ -125,14 +167,27 @@ impl ReactionEngine {
                 self.set_cooldown(&cooldown_key, now, reaction.response.cooldown_minutes).await;
             }
 
+            let mut recent = self.recent_messages.write().await;
+            recent.push(fired.message.clone());
+            if recent.len() > RECENT_HISTORY_SIZE {
+                recent.remove(0);
+            }
+            drop(recent);
+
             let event = MeowEvent::new(EventType::ModuleReaction, &fired.module_id)
                 .with_payload("message", &fired.message)
                 .with_payload("priority", &fired.priority.to_string())
                 .with_payload("reaction_id", &fired.reaction_id);
             self.event_bus.publish(event).await;
+
+            return EvalResult::Fired(fired.clone());
         }
 
-        winner
+        if let Some((module_id, reaction_id)) = blocked_by_cooldown {
+            EvalResult::OnCooldown { module_id, reaction_id }
+        } else {
+            EvalResult::NoMatch
+        }
     }
 
     fn event_matches_trigger(&self, event: &MeowEvent, reaction: &Reaction) -> bool {
@@ -190,7 +245,48 @@ impl ReactionEngine {
             cooldown_ms: (cooldown_minutes as u64) * 60 * 1000,
         });
         drop(cooldowns);
-        self.save_cooldowns().await;
+        *self.cooldowns_dirty.write().await = true;
+    }
+
+    pub async fn flush_if_dirty(&self) {
+        let dirty = *self.cooldowns_dirty.read().await;
+        if dirty {
+            self.save_cooldowns().await;
+            *self.cooldowns_dirty.write().await = false;
+        }
+    }
+}
+
+fn load_priority_overrides() -> HashMap<String, u8> {
+    let path = crate::paths::config_dir().join("priority_overrides.json");
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|data| serde_json::from_str(&data).ok())
+        .unwrap_or_default()
+}
+
+fn level_to_priority(level: u8) -> u8 {
+    match level {
+        1 => 9,
+        2 => 7,
+        3 => 5,
+        4 => 2,
+        _ => 5,
+    }
+}
+
+fn module_has_permission_for_event(module: &LoadedModule, event_type: &EventType) -> bool {
+    let perms = &module.manifest.permissions;
+    if perms.is_empty() {
+        return true;
+    }
+    match event_type {
+        EventType::BrowserUrlChanged => perms.iter().any(|p| p == "browser_url"),
+        EventType::ActiveAppChanged => perms.iter().any(|p| p == "active_app"),
+        EventType::SlackContextChanged => perms.iter().any(|p| p == "active_app" || p == "browser_url"),
+        EventType::UserTyping => perms.iter().any(|p| p == "active_app"),
+        EventType::UserIdle => perms.iter().any(|p| p == "active_app"),
+        _ => true,
     }
 }
 
@@ -208,20 +304,17 @@ fn event_type_from_string(s: &str) -> Option<EventType> {
     }
 }
 
-fn pick_random(messages: &[String]) -> String {
+fn pick_avoiding_recent(messages: &[String], recent: &[String]) -> String {
     if messages.is_empty() {
         return String::new();
     }
-    let idx = rand::thread_rng().gen_range(0..messages.len());
-    messages[idx].clone()
+    let fresh: Vec<&String> = messages.iter().filter(|m| !recent.contains(m)).collect();
+    let pool = if fresh.is_empty() { messages.iter().collect() } else { fresh };
+    let idx = rand::thread_rng().gen_range(0..pool.len());
+    pool[idx].clone()
 }
 
-fn now_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
-}
+use crate::util::now_ms;
 
 #[cfg(test)]
 mod tests {
@@ -358,8 +451,11 @@ mod tests {
         let bus = EventBus::new(64);
         let engine = ReactionEngine::new(bus);
 
+        let unique_id = format!("cd-test-{}", now_ms());
+        let unique_mod = format!("cd-mod-{}", now_ms());
+
         let reaction = Reaction {
-            id: "cd-test".to_string(),
+            id: unique_id,
             trigger: ReactionTrigger {
                 event: "user_typing".to_string(),
                 condition: None,
@@ -370,7 +466,7 @@ mod tests {
                 cooldown_minutes: 60,
             },
         };
-        let module = make_module("cd-mod", vec![reaction]);
+        let module = make_module(&unique_mod, vec![reaction]);
 
         let event = MeowEvent::new(EventType::UserTyping, "system");
 

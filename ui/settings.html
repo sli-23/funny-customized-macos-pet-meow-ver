@@ -2,595 +2,375 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ClaudeMeow</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            background: #fcfaf7;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-            color: #1d1b18;
-            font-size: 14px;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        /* Floating panel container */
-        .panel {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: #fcfaf7;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        @keyframes panelIn {
-            from { opacity: 0; transform: scale(0.97) translateY(6px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        /* Custom title bar — pixel-matched to macOS */
-        .titlebar {
-            height: 52px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border-bottom: 0.5px solid rgba(0,0,0,0.06);
-        }
-        .titlebar h1 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #2d2b28;
-            letter-spacing: -0.2px;
-        }
-        .titlebar .version {
-            font-size: 10px;
-            color: #a09890;
-            font-weight: 500;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            padding: 0 20px;
-            gap: 2px;
-            flex-shrink: 0;
-            background: rgba(0,0,0,0.015);
-            border-bottom: 0.5px solid rgba(0,0,0,0.06);
-        }
-        .tab {
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #a09890;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.15s;
-            user-select: none;
-        }
-        .tab:hover { color: #6b6560; }
-        .tab.active {
-            color: #c25b28;
-            border-bottom-color: #c25b28;
-        }
-
-        /* Scrollable content */
-        .tab-content { display: none; flex: 1; overflow-y: auto; }
-        .tab-content.active { display: flex; flex-direction: column; }
-        .tab-content::-webkit-scrollbar { width: 6px; }
-        .tab-content::-webkit-scrollbar-track { background: transparent; }
-        .tab-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
-        .tab-content::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
-
-        .content {
-            padding: 20px;
-            flex: 1;
-        }
-        .section {
-            background: rgba(255,255,255,0.7);
-            border: 0.5px solid rgba(0,0,0,0.06);
-            border-radius: 10px;
-            padding: 16px 18px;
-            margin-bottom: 12px;
-        }
-        .section-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: #c25b28;
-            margin-bottom: 14px;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-        }
-        .section-desc {
-            font-size: 12px;
-            color: #a09890;
-            margin-top: -8px;
-            margin-bottom: 14px;
-            line-height: 1.5;
-        }
-        .form-group { margin-bottom: 12px; }
-        label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 5px;
-            color: #7a756e;
-            font-size: 12px;
-            letter-spacing: 0.1px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px 10px;
-            border: 0.5px solid rgba(0,0,0,0.1);
-            border-radius: 7px;
-            background: rgba(255,255,255,0.6);
-            color: #1d1b18;
-            font-size: 13px;
-            font-family: 'SF Mono', 'Menlo', monospace;
-            transition: all 0.15s;
-        }
-        textarea { height: 90px; resize: vertical; line-height: 1.5; }
-        select { cursor: pointer; }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: rgba(194,91,40,0.5);
-            box-shadow: 0 0 0 3px rgba(194,91,40,0.08);
-            background: white;
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(0,0,0,0.08);
-            border: none;
-            padding: 0;
-            margin-top: 8px;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: #c25b28;
-            cursor: pointer;
-            box-shadow: 0 1px 4px rgba(194,91,40,0.3);
-        }
-        .row { display: flex; gap: 10px; }
-        .row .form-group { flex: 1; }
-        .toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 0;
-        }
-        .toggle input[type="checkbox"] {
-            width: 34px; height: 20px;
-            min-width: 34px;
-            padding: 0;
-            -webkit-appearance: none;
-            appearance: none;
-            background: rgba(0,0,0,0.1);
-            border-radius: 10px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.2s;
-            border: none;
-            box-shadow: none;
-        }
-        .toggle input[type="checkbox"]::after {
-            content: '';
-            position: absolute;
-            top: 2px; left: 2px;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: white;
-            transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        }
-        .toggle input[type="checkbox"]:checked { background: #c25b28; }
-        .toggle input[type="checkbox"]:checked::after { left: 16px; }
-        .toggle input[type="checkbox"]:focus { outline: none; box-shadow: none; }
-        .toggle label { margin: 0; cursor: pointer; font-size: 13px; color: #4a4641; }
-
-        .footer {
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-top: 0.5px solid rgba(0,0,0,0.06);
-            flex-shrink: 0;
-        }
-        .btn-primary {
-            background: #c25b28;
-            color: white;
-            border: none;
-            padding: 8px 22px;
-            border-radius: 7px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-primary:hover { background: #a84e22; }
-        .btn-primary:active { background: #934520; transform: scale(0.98); }
-        .btn-secondary {
-            padding: 8px 14px;
-            font-size: 11px;
-            background: rgba(0,0,0,0.04);
-            color: #4a4641;
-            border: 0.5px solid rgba(0,0,0,0.08);
-            border-radius: 7px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.15s;
-        }
-        .btn-secondary:hover { background: rgba(0,0,0,0.08); }
-        .status { font-size: 12px; color: #5a9e6f; min-height: 16px; font-weight: 500; }
-        .interval-display { color: #c25b28; font-weight: 600; }
-        .test-status { font-size: 11px; margin-top: 5px; min-height: 14px; }
-        .test-status.success { color: #5a9e6f; }
-        .test-status.error { color: #c25b28; }
-        .test-status.loading { color: #a09890; }
-        .shortcut-hint { margin-top: 4px; font-size: 10px; color: #a09890; }
-        .shortcut-hint kbd {
-            display: inline-block;
-            padding: 1px 5px;
-            background: rgba(0,0,0,0.04);
-            border: 0.5px solid rgba(0,0,0,0.08);
-            border-radius: 4px;
-            font-family: 'SF Mono', monospace;
-            font-size: 9px;
-            color: #7a756e;
-        }
-
-        /* Extension cards */
-        .ext-card {
-            background: rgba(255,255,255,0.5);
-            border: 0.5px solid rgba(0,0,0,0.06);
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: background 0.15s;
-        }
-        .ext-card:hover { background: rgba(255,255,255,0.8); }
-        .ext-icon {
-            width: 32px; height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .ext-info { flex: 1; }
-        .ext-name { font-size: 13px; font-weight: 600; color: #1d1b18; }
-        .ext-desc { font-size: 11px; color: #a09890; margin-top: 2px; }
-        .ext-badge {
-            font-size: 9px; padding: 3px 7px;
-            border-radius: 5px; font-weight: 600; white-space: nowrap;
-        }
-        .ext-badge.active { background: rgba(90,158,111,0.1); color: #5a9e6f; }
-        .ext-badge.coming { background: rgba(0,0,0,0.04); color: #a09890; }
-
-        /* Update log */
-        .update-item { padding: 12px 0; border-bottom: 0.5px solid rgba(0,0,0,0.04); }
-        .update-item:last-child { border-bottom: none; }
-        .update-version { font-size: 13px; font-weight: 700; color: #c25b28; margin-bottom: 3px; }
-        .update-date { font-size: 10px; color: #a09890; margin-bottom: 8px; }
-        .update-list { list-style: none; padding: 0; }
-        .update-list li {
-            font-size: 11px; color: #4a4641;
-            padding: 2px 0 2px 16px;
-            position: relative; line-height: 1.5;
-        }
-        .update-list li::before {
-            content: ''; position: absolute; left: 0; top: 8px;
-            width: 5px; height: 5px; border-radius: 50%; background: #c25b28;
-        }
-        .update-tag {
-            display: inline-block; font-size: 8px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.4px;
-            padding: 1px 5px; border-radius: 3px;
-            margin-right: 3px; vertical-align: middle;
-        }
-        .update-tag.new { background: rgba(194,91,40,0.1); color: #c25b28; }
-        .update-tag.fix { background: rgba(90,158,111,0.1); color: #5a9e6f; }
-        .update-tag.improve { background: rgba(100,130,180,0.1); color: #5a7ab5; }
-        /* ── Dark styles mixin ── */
-        .dark body, .dark { color: #e8e4df; background: #24211e; }
-        .dark .panel { background: #24211e; }
-        .dark .titlebar { border-bottom-color: rgba(255,255,255,0.06); }
-        .dark .titlebar h1 { color: #e8e4df; }
-        .dark .titlebar .version { color: #666; }
-        .dark .tabs { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
-        .dark .tab { color: #7a756e; }
-        .dark .tab:hover { color: #a09890; }
-        .dark .section { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
-        .dark .section-desc { color: #7a756e; }
-        .dark label { color: #9b9386; }
-        .dark input, .dark select, .dark textarea { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #e8e4df; }
-        .dark input:focus, .dark select:focus, .dark textarea:focus { border-color: rgba(194,91,40,0.6); box-shadow: 0 0 0 3px rgba(194,91,40,0.15); background: rgba(255,255,255,0.08); }
-        .dark input[type="range"] { background: rgba(255,255,255,0.08); }
-        .dark .toggle input[type="checkbox"] { background: rgba(255,255,255,0.15); }
-        .dark .toggle input[type="checkbox"]:checked { background: #e07040; }
-        .dark .toggle label { color: #a09890; }
-        .dark .btn-secondary { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #a09890; }
-        .dark .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-        .dark .footer { border-top-color: rgba(255,255,255,0.06); }
-        .dark .shortcut-hint { color: #7a756e; }
-        .dark .shortcut-hint kbd { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: #9b9386; }
-        .dark .ext-card { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
-        .dark .ext-card:hover { background: rgba(255,255,255,0.06); }
-        .dark .ext-name { color: #e8e4df; }
-        .dark .ext-desc { color: #7a756e; }
-        .dark .ext-badge.active { background: rgba(90,158,111,0.15); }
-        .dark .ext-badge.coming { background: rgba(255,255,255,0.05); }
-        .dark .update-item { border-bottom-color: rgba(255,255,255,0.04); }
-        .dark .update-list li { color: #a09890; }
-        .dark .tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
-        .dark .tab-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-        .dark .tab.active { color: #e07040; border-bottom-color: #e07040; }
-        .dark .btn-primary { background: #e07040; }
-        .dark .btn-primary:hover { background: #c25b28; }
-        .dark .status { color: #6bc48a; }
-        .dark .interval-display { color: #e07040; }
-        .dark .section-title { color: #e07040; }
-        .dark .update-version { color: #e07040; }
-        .dark .test-status.success { color: #6bc48a; }
-        .dark .test-status.error { color: #e07040; }
-
-        /* Update fold */
-        .update-folded .update-list { display: none; }
-        .update-folded .update-date { display: none; }
-        .update-version {
-            cursor: pointer; user-select: none;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 4px 0;
-        }
-        .update-fold-hint {
-            font-size: 12px; color: #a09890; font-weight: 500;
-            width: 20px; height: 20px; display: inline-flex;
-            align-items: center; justify-content: center;
-            border-radius: 4px; background: rgba(0,0,0,0.04);
-        }
-        .dark .update-fold-hint { background: rgba(255,255,255,0.06); }
-        .update-folded .update-fold-hint::after { content: '▸'; }
-        .update-item:not(.update-folded) .update-fold-hint::after { content: '▾'; }
-
-        /* Priority tab */
-        .priority-name { color: #1d1b18; font-size: 13px; font-weight: 600; }
-        .dark .priority-name { color: #e8e4df; }
-        .plvl {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 20px; height: 20px; border-radius: 4px;
-            font-size: 11px; font-weight: 700; cursor: pointer;
-            border: 1.5px solid transparent; transition: all 0.1s;
-        }
-        .plvl-1 { background: rgba(239,68,68,0.15); color: #dc2626; border-color: rgba(239,68,68,0.3); }
-        .plvl-2 { background: rgba(245,158,11,0.15); color: #d97706; border-color: rgba(245,158,11,0.3); }
-        .plvl-3 { background: rgba(59,130,246,0.15); color: #2563eb; border-color: rgba(59,130,246,0.3); }
-        .plvl-4 { background: rgba(156,163,175,0.15); color: #6b7280; border-color: rgba(156,163,175,0.3); }
-        .plvl.active { transform: scale(1.1); }
-        .plvl-1.active { background: #dc2626; color: white; }
-        .plvl-2.active { background: #d97706; color: white; }
-        .plvl-3.active { background: #2563eb; color: white; }
-        .plvl-4.active { background: #6b7280; color: white; }
-        .plvl:hover { transform: scale(1.1); }
-        .priority-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.04);
-        }
-        .priority-row:last-child { border-bottom: none; }
-        .dark .priority-row { border-bottom-color: rgba(255,255,255,0.04); }
-        .priority-levels { display: flex; gap: 4px; }
-    </style>
+    <title>ClaudeMeow Settings</title>
+    <link rel="stylesheet" href="css/settings/base.css">
+    <link rel="stylesheet" href="css/settings/nav.css">
+    <link rel="stylesheet" href="css/settings/forms.css">
+    <link rel="stylesheet" href="css/settings/pages.css">
+    <link rel="stylesheet" href="css/settings/components.css">
+    <link rel="stylesheet" href="css/settings/rail.css">
 </head>
 <body>
-    <div class="panel">
-        <!-- Custom title bar -->
-        <div class="titlebar" data-tauri-drag-region>
-            <h1 data-tauri-drag-region>ClaudeMeow Settings</h1>
-            <span class="version" data-tauri-drag-region>v1.2.2</span>
+    <!-- Titlebar -->
+    <div class="titlebar" data-tauri-drag-region>
+        <span class="titlebar-name">ClaudeMeowPet</span>
+        <span class="titlebar-label">Control Panel</span>
+    </div>
+
+    <div class="settings-layout">
+        <!-- Left Navigation -->
+        <div class="sidebar" data-tauri-drag-region>
+            <nav>
+                <div class="nav-item active" onclick="switchPage('connection', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+                    Connection
+                    <span class="nav-num">01</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('behavior', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12h12M4 8h8M6 4h4"/></svg>
+                    Behavior
+                    <span class="nav-num">02</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('identity', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5"/></svg>
+                    Identity
+                    <span class="nav-num">03</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('modules', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>
+                    Modules
+                    <span class="nav-num">04</span>
+                </div>
+                <div class="nav-item" id="amazonNav" style="display:none;" onclick="switchPage('amazon', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M5 4V2.5A1.5 1.5 0 0 1 6.5 1h3A1.5 1.5 0 0 1 11 2.5V4"/></svg>
+                    Amazon
+                    <span class="nav-num">05</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('advanced', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+                    Advanced
+                    <span class="nav-num">06</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('status', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v4l3 2"/><circle cx="8" cy="8" r="6"/></svg>
+                    Status
+                    <span class="nav-num">07</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('shortcuts', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M5 8h6M5 10h3"/></svg>
+                    Shortcuts
+                    <span class="nav-num">08</span>
+                </div>
+                <div class="nav-item" onclick="switchPage('updates', this)">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+                    Updates
+                    <span class="nav-num">09</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggleBtn" onclick="cycleTheme()">
+                    <svg id="themeIconMoon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8.5a5.5 5.5 0 01-7-7 5.5 5.5 0 107 7z"/></svg>
+                    <svg id="themeIconSun" style="display:none;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>
+                </button>
+                <span class="sidebar-version" id="themeLabel">Dark</span>
+            </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('general', this)">General</div>
-            <div class="tab" onclick="switchTab('extensions', this)">Extensions</div>
-            <div class="tab" onclick="switchTab('priority', this)">Priority</div>
-            <div class="tab" onclick="switchTab('secret', this)">SecretMeow</div>
-            <div class="tab" onclick="switchTab('updates', this)">Updates</div>
-        </div>
+        <!-- Central Workspace -->
+        <div class="content-pane" data-tauri-drag-region>
 
-        <!-- GENERAL -->
-        <div class="tab-content active" id="tab-general">
-            <div class="content">
+            <!-- CONNECTION -->
+            <div class="page active" id="page-connection">
+                <div class="page-header">
+                    <span class="page-number">01</span>
+                    <span class="page-title">Connection<span class="save-dot"></span></span>
+                </div>
+
                 <div class="section">
                     <div class="section-title">AI Provider</div>
-
-                    <div class="form-group">
-                        <label>Provider</label>
-                        <select id="providerSelect" onchange="updateProviderFields()">
-                            <option value="bedrock_apikey">Amazon Bedrock (API Key)</option>
-                            <option value="bedrock_iam">Amazon Bedrock (IAM Role)</option>
-                            <option value="anthropic">Anthropic (Direct API)</option>
-                            <option value="openai">OpenAI</option>
-                        </select>
-                    </div>
-
-                    <!-- Bedrock fields -->
-                    <div id="bedrockFields">
-                        <div class="form-group" id="bedrockKeyRow">
-                            <label>Bedrock API Key</label>
-                            <div style="display:flex; gap:6px; align-items:center;">
-                                <input type="password" id="apiKey" placeholder="ABSK..." style="flex:1;">
-                                <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
-                            </div>
-                            <div class="test-status" id="testStatus"></div>
+                    <div class="section-panel">
+                        <div class="form-group">
+                            <label>Provider</label>
+                            <select id="providerSelect" onchange="updateProviderFields()">
+                                <option value="bedrock_apikey">Amazon Bedrock (API Key)</option>
+                                <option value="bedrock_iam">Amazon Bedrock (IAM Role)</option>
+                                <option value="anthropic">Anthropic (Direct API)</option>
+                                <option value="openai">OpenAI</option>
+                            </select>
                         </div>
-                        <div class="row">
+                        <div id="bedrockFields">
+                            <div class="form-group" id="bedrockKeyRow">
+                                <label>Bedrock API Key</label>
+                                <div class="input-row">
+                                    <input type="password" id="apiKey" class="mono" placeholder="ABSK...">
+                                    <button type="button" onclick="testApi()" class="btn-secondary" id="testBtn">Test</button>
+                                </div>
+                                <div class="test-status" id="testStatus"></div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label>AWS Region</label>
+                                    <select id="region">
+                                        <option value="us-west-2">us-west-2</option>
+                                        <option value="us-east-1">us-east-1</option>
+                                        <option value="eu-west-1">eu-west-1</option>
+                                        <option value="ap-northeast-1">ap-northeast-1</option>
+                                        <option value="ap-southeast-1">ap-southeast-1</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Model</label>
+                                    <select id="modelId">
+                                        <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast)</option>
+                                        <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
+                                        <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="bedrockIamNote" class="section-desc" style="display:none;">
+                                Using IAM Role — credentials loaded from AWS CLI profile or environment.
+                            </div>
+                        </div>
+                        <div id="anthropicFields" style="display:none;">
                             <div class="form-group">
-                                <label>AWS Region</label>
-                                <select id="region">
-                                    <option value="us-west-2">us-west-2</option>
-                                    <option value="us-east-1">us-east-1</option>
-                                    <option value="eu-west-1">eu-west-1</option>
-                                    <option value="ap-northeast-1">ap-northeast-1</option>
-                                    <option value="ap-southeast-1">ap-southeast-1</option>
-                                </select>
+                                <label>Anthropic API Key</label>
+                                <div class="input-row">
+                                    <input type="password" id="anthropicApiKey" class="mono" placeholder="sk-ant-...">
+                                    <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
+                                </div>
+                                <div class="test-status" id="anthropicTestStatus"></div>
                             </div>
                             <div class="form-group">
                                 <label>Model</label>
-                                <select id="modelId">
-                                    <option value="us.anthropic.claude-haiku-4-5-20251001-v1:0">Claude Haiku 4.5 (fast, default)</option>
-                                    <option value="us.anthropic.claude-sonnet-4-20250514-v1:0">Claude Sonnet 4</option>
-                                    <option value="us.anthropic.claude-opus-4-20250514-v1:0">Claude Opus 4</option>
+                                <select id="anthropicModelId">
+                                    <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast)</option>
+                                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                    <option value="claude-opus-4-20250514">Claude Opus 4</option>
                                 </select>
                             </div>
                         </div>
-                        <div id="bedrockIamNote" class="section-desc" style="display:none;">
-                            Using IAM Role — no API key needed. Credentials are loaded from your AWS CLI profile or environment.
+                        <div id="openaiFields" style="display:none;">
+                            <div class="form-group">
+                                <label>OpenAI API Key</label>
+                                <div class="input-row">
+                                    <input type="password" id="openaiApiKey" class="mono" placeholder="sk-...">
+                                    <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
+                                </div>
+                                <div class="test-status" id="openaiTestStatus"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Model</label>
+                                <select id="openaiModelId">
+                                    <option value="gpt-4o-mini">GPT-4o Mini (fast)</option>
+                                    <option value="gpt-4o">GPT-4o</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Anthropic fields -->
-                    <div id="anthropicFields" style="display:none;">
-                        <div class="form-group">
-                            <label>Anthropic API Key</label>
-                            <div style="display:flex; gap:6px; align-items:center;">
-                                <input type="password" id="anthropicApiKey" placeholder="sk-ant-..." style="flex:1;">
-                                <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
-                            </div>
-                            <div class="test-status" id="testStatus"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Model</label>
-                            <select id="anthropicModelId">
-                                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast, default)</option>
-                                <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-                                <option value="claude-opus-4-20250514">Claude Opus 4</option>
-                            </select>
-                        </div>
-                    </div>
+            <!-- BEHAVIOR -->
+            <div class="page" id="page-behavior">
+                <div class="page-header">
+                    <span class="page-number">02</span>
+                    <span class="page-title">Behavior<span class="save-dot"></span></span>
+                </div>
 
-                    <!-- OpenAI fields -->
-                    <div id="openaiFields" style="display:none;">
-                        <div class="form-group">
-                            <label>OpenAI API Key</label>
-                            <div style="display:flex; gap:6px; align-items:center;">
-                                <input type="password" id="openaiApiKey" placeholder="sk-..." style="flex:1;">
-                                <button type="button" onclick="testApi()" class="btn-secondary">Test</button>
+                <div class="section">
+                    <div class="section-title">Timing</div>
+                    <div class="section-panel">
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Message Interval</label>
+                                <select id="interval">
+                                    <option value="1">1 min</option>
+                                    <option value="2">2 min</option>
+                                    <option value="3">3 min</option>
+                                    <option value="5" selected>5 min</option>
+                                    <option value="10">10 min</option>
+                                    <option value="15">15 min</option>
+                                </select>
                             </div>
-                            <div class="test-status" id="testStatus"></div>
+                            <div class="form-group">
+                                <label>Bubble Display Time</label>
+                                <select id="bubbleDisplayTime">
+                                    <option value="10">10 sec</option>
+                                    <option value="15">15 sec</option>
+                                    <option value="20">20 sec</option>
+                                    <option value="30" selected>30 sec</option>
+                                    <option value="45">45 sec</option>
+                                    <option value="60">60 sec</option>
+                                    <option value="90">90 sec</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Model</label>
-                            <select id="openaiModelId">
-                                <option value="gpt-4o-mini">GPT-4o Mini (fast, default)</option>
-                                <option value="gpt-4o">GPT-4o</option>
-                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            </select>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Idle Gap</label>
+                                <select id="idleGap">
+                                    <option value="1">1 min</option>
+                                    <option value="2">2 min</option>
+                                    <option value="3" selected>3 min</option>
+                                    <option value="5">5 min</option>
+                                    <option value="10">10 min</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reaction Cooldown</label>
+                                <select id="reactionCooldown">
+                                    <option value="5">5 sec</option>
+                                    <option value="10" selected>10 sec</option>
+                                    <option value="15">15 sec</option>
+                                    <option value="20">20 sec</option>
+                                    <option value="30">30 sec</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="toggle">
+                            <input type="checkbox" id="activityEnabled" checked>
+                            <label for="activityEnabled">Read active window title for context</label>
+                        </div>
+                        <div class="shortcut-hint">
+                            <kbd>ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd> anywhere to chat with your pet
                         </div>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="section-title">Personality</div>
-                    <div class="form-group">
-                        <label>Persona Prompt</label>
-                        <textarea id="persona" placeholder="Describe the pet's personality..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Your Nickname (what the pet calls you)</label>
-                        <input type="text" id="userNickname" placeholder="e.g. 铲屎官, hooman, buddy...">
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">About You (optional)</div>
-                    <div class="section-desc">Tell ClaudeMeow about yourself so it can personalize messages. Share this file with friends so their pet knows them too!</div>
-                    <div class="form-group">
-                        <textarea id="userProfile" placeholder="My hobbies: gaming, cooking&#10;Favorite music: indie, jazz&#10;I like cats and coffee&#10;My name is..." style="height:80px;"></textarea>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">Appearance</div>
-                    <div class="form-group">
-                        <label>Theme</label>
-                        <select id="themeMode" onchange="applyTheme()">
-                            <option value="system">System (follow macOS)</option>
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">More Settings</div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Message Interval</label>
-                            <select id="interval">
-                                <option value="1">1 min</option>
-                                <option value="2">2 min</option>
-                                <option value="3">3 min</option>
-                                <option value="5" selected>5 min</option>
-                                <option value="10">10 min</option>
-                                <option value="15">15 min</option>
-                            </select>
+                    <div class="section-panel">
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Chattiness</label>
+                                <select id="chattiness">
+                                    <option value="1">1 — Quiet</option>
+                                    <option value="2">2 — Calm</option>
+                                    <option value="3" selected>3 — Normal</option>
+                                    <option value="4">4 — Chatty</option>
+                                    <option value="5">5 — Very talkative</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sass Level</label>
+                                <select id="sassLevel">
+                                    <option value="1">1 — Gentle</option>
+                                    <option value="2">2 — Mild</option>
+                                    <option value="3" selected>3 — Normal</option>
+                                    <option value="4">4 — Snarky</option>
+                                    <option value="5">5 — Maximum roast</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Bubble Display</label>
-                            <select id="bubbleDisplay">
-                                <option value="30">30 sec</option>
-                                <option value="60" selected>1 min</option>
-                                <option value="120">2 min</option>
+                            <label>Language</label>
+                            <select id="languageMix">
+                                <option value="bilingual">Bilingual (Chinese + English)</option>
+                                <option value="chinese">Chinese only</option>
+                                <option value="english">English only</option>
                             </select>
                         </div>
                     </div>
-                    <div class="toggle">
-                        <input type="checkbox" id="activityEnabled" checked>
-                        <label for="activityEnabled">Read active window title for context</label>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Health Reminders</div>
+                    <div class="section-panel">
+                        <div class="toggle">
+                            <input type="checkbox" id="healthEnabled" checked>
+                            <label for="healthEnabled">Enable health reminders</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Reminder Interval</label>
+                            <select id="healthInterval">
+                                <option value="30">30 min</option>
+                                <option value="45" selected>45 min</option>
+                                <option value="60">60 min</option>
+                                <option value="90">90 min</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Quiet Hours Start</label>
+                                <select id="quietStart">
+                                    <option value="21">21:00</option>
+                                    <option value="22">22:00</option>
+                                    <option value="23" selected>23:00</option>
+                                    <option value="0">00:00</option>
+                                    <option value="255">Disabled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quiet Hours End</label>
+                                <select id="quietEnd">
+                                    <option value="6">06:00</option>
+                                    <option value="7">07:00</option>
+                                    <option value="8" selected>08:00</option>
+                                    <option value="9">09:00</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="toggle">
-                        <input type="checkbox" id="devMode" onchange="toggleDevWindow(this.checked)">
-                        <label for="devMode">Developer mode (opens dev console)</label>
-                    </div>
-                    <div class="shortcut-hint">
-                        Press <kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd> anywhere to chat with your pet
+                </div>
+            </div>
+
+            <!-- IDENTITY -->
+            <div class="page" id="page-identity">
+                <div class="page-header">
+                    <span class="page-number">03</span>
+                    <span class="page-title">Identity<span class="save-dot"></span></span>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Pet Persona</div>
+                    <div class="section-desc">Define the cat's personality and how it talks.</div>
+                    <div class="section-panel">
+                        <div class="form-group">
+                            <label>Persona Prompt</label>
+                            <textarea id="persona" placeholder="Describe the pet's personality..." style="height:140px;"></textarea>
+                        </div>
                     </div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">Permissions</div>
-                    <div class="section-desc">ClaudeMeow needs macOS permissions to detect your activity and browser URLs.</div>
-                    <div id="permStatus" style="margin-bottom:10px;"></div>
-                    <button class="btn-secondary" onclick="checkPerms()">Check Permissions</button>
+                    <div class="section-title">About You</div>
+                    <div class="section-desc">Tell the cat who you are. It uses this to personalize messages.</div>
+                    <div class="section-panel">
+                        <div class="form-group">
+                            <label>Your Nickname</label>
+                            <input type="text" id="userNickname" placeholder="What the pet calls you (e.g. hooman, buddy)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Things the cat knows about you</div>
+                    <div class="section-desc">Short facts, habits, or inside jokes. The cat weaves these into messages.</div>
+                    <div class="chip-container" id="userFactsContainer"></div>
+                    <div class="chip-input-row">
+                        <input type="text" id="userFactInput" class="chip-input" placeholder="e.g. always forgets lunch, boba addict" maxlength="60">
+                        <button class="btn-secondary" onclick="addUserFact()">Add</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="footer">
-                <button onclick="saveSettings()" class="btn-primary">Save Settings</button>
-                <div class="status" id="status"></div>
-            </div>
-        </div>
+            <!-- MODULES (includes Priority) -->
+            <div class="page" id="page-modules">
+                <div class="page-header">
+                    <span class="page-number">04</span>
+                    <span class="page-title">Modules<span class="save-dot"></span></span>
+                </div>
 
-        <!-- EXTENSIONS -->
-        <div class="tab-content" id="tab-extensions">
-            <div class="content">
                 <div class="section">
-                    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-                        <span>Modules</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="btn-secondary" onclick="showCreateForm()" id="createBtn">+ Create</button>
+                    <div class="section-header">
+                        <div class="section-title">Installed</div>
+                        <div class="section-header-actions">
                             <button class="btn-secondary" onclick="refreshModules()" id="refreshBtn">Refresh</button>
                         </div>
                     </div>
-                    <div class="section-desc">Drop module folders into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">modules/</code> or use Create to build one in-app.</div>
+                    <div class="section-desc">Drop module folders into <code>modules/</code> to add reactions.</div>
                     <div id="moduleList">
                         <div class="ext-card" style="justify-content:center;opacity:0.5;">
                             <div class="ext-desc">Loading modules...</div>
@@ -598,746 +378,473 @@
                     </div>
                 </div>
 
-                <!-- Create Module Form -->
-                <div class="section" id="createModuleForm" style="display:none;">
-                    <div class="section-title">New Module</div>
-                    <div class="row">
-                        <div class="form-group" style="flex:3;">
-                            <label>Module Name</label>
-                            <input type="text" id="newModName" placeholder="My Module">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label>Icon</label>
-                            <input type="text" id="newModIcon" placeholder="🐱" maxlength="4" style="text-align:center;font-size:18px;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="newModDesc" placeholder="What does this module react to?">
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Trigger Event</label>
-                            <select id="newModEvent" onchange="updateConditionFields()">
-                                <option value="active_app_changed">Active App Changed</option>
-                                <option value="browser_url_changed">Browser URL Changed</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Condition Field</label>
-                            <select id="newModCondField">
-                                <option value="app_name">App Name</option>
-                                <option value="window_title">Window Title</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Match Type</label>
-                            <select id="newModCondType">
-                                <option value="contains">Contains</option>
-                                <option value="equals">Equals</option>
-                                <option value="not_contains">Does Not Contain</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Value</label>
-                            <input type="text" id="newModCondVal" placeholder="e.g. Slack">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Messages (one per line — one is picked randomly)</label>
-                        <textarea id="newModMessages" placeholder="摸鱼呢！🐟&#10;Slack中！加油～" style="height:80px;"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Priority (1–10)</label>
-                            <input type="number" id="newModPriority" value="5" min="1" max="10">
-                        </div>
-                        <div class="form-group">
-                            <label>Cooldown (minutes)</label>
-                            <input type="number" id="newModCooldown" value="10" min="1" max="120">
-                        </div>
-                    </div>
-                    <div class="test-status" id="createStatus"></div>
-                    <div style="display:flex;gap:8px;margin-top:8px;">
-                        <button class="btn-primary" onclick="saveNewModule()">Save & Load</button>
-                        <button class="btn-secondary" onclick="hideCreateForm()">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PRIORITY -->
-        <div class="tab-content" id="tab-priority">
-            <div class="content">
                 <div class="section">
-                    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-                        <span>Module Priority</span>
-                        <div style="display:flex;gap:6px;">
-                            <button class="btn-secondary" onclick="loadPriorities()">Refresh</button>
+                    <div class="section-header">
+                        <div class="section-title">Priority</div>
+                        <div class="section-header-actions">
                             <button class="btn-secondary" onclick="resetPriorities()">Reset</button>
                             <button class="btn-primary" onclick="savePriorities()">Save</button>
                         </div>
                     </div>
-                    <div class="section-desc">
-                        <span class="plvl plvl-1">1</span> Critical
-                        <span class="plvl plvl-2">2</span> Important
-                        <span class="plvl plvl-3">3</span> Normal
-                        <span class="plvl plvl-4">4</span> Low
-                        — Higher level fires first. Same level = random.
+                    <div class="section-desc">Higher priority fires first. Same level = random pick.</div>
+                    <div class="section-panel">
+                        <div id="priorityList"></div>
                     </div>
-                    <div id="priorityList"></div>
-                    <div class="status" id="priorityStatus" style="margin-top:8px;"></div>
+                    <div class="test-status" id="priorityStatus" style="margin-top:6px;"></div>
                 </div>
-            </div>
-        </div>
 
-        <!-- SECRET MEOW -->
-        <div class="tab-content" id="tab-secret">
-            <div class="content">
-                <div class="section">
-                    <div class="section-title">SecretMeow</div>
-                    <div class="section-desc">A friend can write a <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">.meow</code> file with secret messages just for you. Drop it into <code style="font-size:11px;background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">profiles/</code> and scan.</div>
-
-                    <div style="margin: 16px 0;">
-                        <button class="btn-primary" onclick="scanMeow()">Scan for .meow Files</button>
-                    </div>
-
-                    <div id="meowResult" style="min-height:40px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- UPDATES -->
-        <div class="tab-content" id="tab-updates">
-            <div class="content">
-                <div class="section" id="updateCard">
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                        <div style="width:36px;height:36px;border-radius:8px;background:rgba(194,91,40,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;">🐱</div>
-                        <div style="flex:1;">
-                            <div style="font-size:14px;font-weight:600;" class="priority-name">ClaudeMeow</div>
-                            <div style="font-size:11px;color:#a09890;">v1.3.2 · You're up to date</div>
+                <div class="section" id="createModuleForm" style="display:none;">
+                    <div class="section-title">New Module</div>
+                    <div class="section-group">
+                        <div class="row">
+                            <div class="form-group" style="flex:3;">
+                                <label>Module Name</label>
+                                <input type="text" id="newModName" placeholder="My Module">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Icon</label>
+                                <input type="text" id="newModIcon" placeholder="🐱" maxlength="4" style="text-align:center;font-size:16px;">
+                            </div>
                         </div>
-                        <button class="btn-secondary" onclick="checkForUpdate()" id="updateBtn">Check for Updates</button>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="newModDesc" placeholder="What does this module react to?">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Trigger Event</label>
+                                <select id="newModEvent" onchange="updateConditionFields()">
+                                    <option value="active_app_changed">Active App Changed</option>
+                                    <option value="browser_url_changed">Browser URL Changed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Condition Field</label>
+                                <select id="newModCondField">
+                                    <option value="app_name">App Name</option>
+                                    <option value="window_title">Window Title</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Match Type</label>
+                                <select id="newModCondType">
+                                    <option value="contains">Contains</option>
+                                    <option value="equals">Equals</option>
+                                    <option value="not_contains">Does Not Contain</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Value</label>
+                                <input type="text" id="newModCondVal" placeholder="e.g. Slack">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Messages (one per line)</label>
+                            <textarea id="newModMessages" placeholder="Message 1&#10;Message 2" style="height:60px;"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Priority (1-10)</label>
+                                <input type="number" id="newModPriority" value="5" min="1" max="10">
+                            </div>
+                            <div class="form-group">
+                                <label>Cooldown (minutes)</label>
+                                <input type="number" id="newModCooldown" value="10" min="1" max="120">
+                            </div>
+                        </div>
+                        <div class="test-status" id="createStatus"></div>
+                        <div class="input-row" style="margin-top:10px;">
+                            <button class="btn-primary" onclick="saveNewModule()">Save & Load</button>
+                            <button class="btn-secondary" onclick="hideCreateForm()">Cancel</button>
+                        </div>
                     </div>
-                    <div id="updateStatus"></div>
                 </div>
+            </div>
+
+            <!-- AMAZON -->
+            <div class="page" id="page-amazon">
+                <div class="page-header">
+                    <span class="page-number">05</span>
+                    <span class="page-title">Amazon<span class="save-dot"></span></span>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Connection</div>
+                    <div class="section-panel">
+                        <div class="form-group">
+                            <label>Your Amazon Alias</label>
+                            <input type="text" id="amazonAlias" placeholder="e.g. shuyli" oninput="this.value=this.value.toLowerCase()" style="text-transform:lowercase;">
+                        </div>
+                        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Requires a valid Midway session (<code>mwinit -o -s</code>).</div>
+                        <div class="input-row" style="margin-top:12px;">
+                            <button class="btn-primary" id="amazonInitBtn" onclick="initAmazon()">Initialize</button>
+                            <button class="btn-secondary" id="amazonTestBtn" style="display:none;" onclick="testAmazonConnection()">Test Connection</button>
+                        </div>
+                        <div class="test-status" id="amazonTestStatus"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Team</div>
+                    <div class="section-desc">Nicknames are used in gossip messages about teammates.</div>
+                    <div id="amazonTeamList" style="font-size:11px;color:var(--text-muted);">Click "Initialize" to load team</div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Features</div>
+                    <div class="section-panel">
+                        <div class="toggle">
+                            <input type="checkbox" id="amazonCrEnabled">
+                            <label for="amazonCrEnabled">CR Reviews (gossip about teammates' code)</label>
+                        </div>
+                        <div class="toggle">
+                            <input type="checkbox" id="amazonCalendarEnabled">
+                            <label for="amazonCalendarEnabled">Calendar (meeting reminders)</label>
+                        </div>
+                        <div class="row" style="margin-top:12px;">
+                            <div class="form-group">
+                                <label>Gossip Frequency</label>
+                                <select id="amazonCrInterval">
+                                    <option value="1">Every 1h</option>
+                                    <option value="2" selected>Every 2h</option>
+                                    <option value="3">Every 3h</option>
+                                    <option value="4">Every 4h</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Memory Reset</label>
+                                <select id="amazonCrReset">
+                                    <option value="1">Every day</option>
+                                    <option value="3" selected>Every 3 days</option>
+                                    <option value="7">Every week</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Commit History</label>
+                            <select id="amazonCrDays">
+                                <option value="7">Last 7 days</option>
+                                <option value="14" selected>Last 14 days</option>
+                                <option value="30">Last 30 days</option>
+                                <option value="60">Last 60 days</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">CR Intelligence</div>
+                        <div class="section-header-actions">
+                            <button class="btn-secondary" onclick="refreshCrStats()">Refresh Stats</button>
+                            <button class="btn-secondary" onclick="clearGossipMemory()">Clear Memory</button>
+                        </div>
+                    </div>
+                    <div id="crIntelPanel" style="font-size:11px;color:var(--text-muted);">Click Refresh to load CR data</div>
+                </div>
+            </div>
+
+            <!-- ADVANCED -->
+            <div class="page" id="page-advanced">
+                <div class="page-header">
+                    <span class="page-number">06</span>
+                    <span class="page-title">Advanced<span class="save-dot"></span></span>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Permissions</div>
+                    <div class="section-desc">macOS permissions for activity detection and browser URLs.</div>
+                    <div id="permStatus"></div>
+                    <button class="btn-secondary" onclick="checkPerms()" style="margin-top:10px;">Check Permissions</button>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Developer</div>
+                    <div class="section-panel">
+                        <div class="toggle">
+                            <input type="checkbox" id="devMode" onchange="toggleDevWindow(this.checked)">
+                            <label for="devMode">Developer mode</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Secret Messages</div>
+                    <div class="section-desc">A friend can write a <code>.meow</code> file with secret messages just for you. Drop it into <code>profiles/</code> and scan.</div>
+                    <button class="btn-secondary" onclick="scanMeow()">Scan for .meow Files</button>
+                    <div id="meowResult" style="min-height:16px;margin-top:10px;"></div>
+                </div>
+
+                <div class="section danger-section">
+                    <div class="section-title">⚠ Danger Zone</div>
+                    <div class="section-desc">This will reset all settings, persona, and user profile back to factory defaults. This action cannot be undone.</div>
+                    <button class="btn-danger" onclick="resetToDefaults()">Reset All to Defaults</button>
+                </div>
+
+            </div>
+
+            <!-- STATUS -->
+            <div class="page" id="page-status">
+                <div class="page-header">
+                    <span class="page-number">07</span>
+                    <span class="page-title">Status<span class="save-dot"></span></span>
+                </div>
+
+                <div class="section">
+                    <div class="rpg-card">
+                        <div class="rpg-portrait">
+                            <pre class="ascii-cat" id="asciiCat">  /\_/\
+ ( ^.^ )
+  > ^ <
+ /|   |\
+(_|   |_)</pre>
+                        </div>
+                        <div class="rpg-stats">
+                            <div class="rpg-header">
+                                <span class="rpg-name">ClaudeMeow</span>
+                                <span class="rpg-level">Lv.3</span>
+                            </div>
+                            <div class="rpg-mood">Mood: <span id="asciiCatMood">Happy</span></div>
+                            <div class="rpg-bars">
+                                <div class="pet-stat-row">
+                                    <span class="pet-stat-label">HP</span>
+                                    <div class="pet-stat-bar"><div class="pet-stat-fill happiness" id="statHappiness" style="width:70%"></div></div>
+                                    <span class="pet-stat-val" id="statHappinessVal">70</span>
+                                </div>
+                                <div class="pet-stat-row">
+                                    <span class="pet-stat-label">MP</span>
+                                    <div class="pet-stat-bar"><div class="pet-stat-fill energy" id="statEnergy" style="width:80%"></div></div>
+                                    <span class="pet-stat-val" id="statEnergyVal">80</span>
+                                </div>
+                                <div class="pet-stat-row">
+                                    <span class="pet-stat-label">HGR</span>
+                                    <div class="pet-stat-bar"><div class="pet-stat-fill hunger" id="statHunger" style="width:60%"></div></div>
+                                    <span class="pet-stat-val" id="statHungerVal">60</span>
+                                </div>
+                                <div class="pet-stat-row">
+                                    <span class="pet-stat-label">♥</span>
+                                    <div class="pet-stat-bar"><div class="pet-stat-fill love" id="statLove" style="width:50%"></div></div>
+                                    <span class="pet-stat-val" id="statLoveVal">50</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">How It Works</div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+                        <p style="margin-bottom:14px;"><strong style="color:var(--text);">Mood</strong> — Changes based on stats. High love = Love mode. Low happiness = Sad. Low energy = Sleepy. Empty stomach = Hungry. Above 70 happiness = Happy.</p>
+                        <p style="margin-bottom:14px;"><strong style="color:var(--text);">Daily Cycle</strong> — Stats decay each hour. Energy follows your real schedule. Everything resets at 9 AM.</p>
+                        <p><strong style="color:var(--text);">Interactions</strong> — Pet = small boost. Chat = bigger boost. 5x rapid click = angry. Keep it happy by chatting, not spam-clicking.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Activity History</div>
+                        <div class="section-header-actions">
+                            <button class="btn-secondary" onclick="toggleActivityHistory()" id="activityToggleBtn" style="font-size:9px;height:20px;padding:0 6px;">Show All</button>
+                        </div>
+                    </div>
+                    <div class="activity-list" id="activityHistory">
+                        <div style="color:var(--text-muted);font-size:11px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHORTCUTS -->
+            <div class="page" id="page-shortcuts">
+                <div class="page-header">
+                    <span class="page-number">08</span>
+                    <span class="page-title">Shortcuts<span class="save-dot"></span></span>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Global</div>
+                    <div class="section-panel">
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd></span>
+                            <span class="shortcut-desc">Chat with your pet (from anywhere)</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys"><kbd>Esc</kbd></span>
+                            <span class="shortcut-desc">Close chat input / close settings</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Control Panel</div>
+                    <div class="section-panel">
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys"><kbd>Cmd</kbd> + <kbd>S</kbd></span>
+                            <span class="shortcut-desc">Save settings immediately</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys"><kbd>Esc</kbd></span>
+                            <span class="shortcut-desc">Close control panel</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Pet Interactions</div>
+                    <div class="section-panel">
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Click</span>
+                            <span class="shortcut-desc">Tap the cat (happiness +3)</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Double-click</span>
+                            <span class="shortcut-desc">Poke the cat (playful reactions)</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">5x rapid click</span>
+                            <span class="shortcut-desc">Rage mode (cat gets angry!)</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Drag</span>
+                            <span class="shortcut-desc">Move the pet window</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Tray Menu</div>
+                    <div class="section-panel">
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Hide/Show Pet</span>
+                            <span class="shortcut-desc">Toggle pet visibility</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Meow Status</span>
+                            <span class="shortcut-desc">Open pet stats window</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Control Panel</span>
+                            <span class="shortcut-desc">Open settings</span>
+                        </div>
+                        <div class="shortcut-row">
+                            <span class="shortcut-keys">Restart</span>
+                            <span class="shortcut-desc">Restart the app (dev: cargo run, release: relaunch .app)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPDATES -->
+            <div class="page" id="page-updates">
+                <div class="page-header">
+                    <span class="page-number">09</span>
+                    <span class="page-title">Updates<span class="save-dot"></span></span>
+                </div>
+
                 <div class="section">
                     <div class="section-title">Changelog</div>
-
                     <div class="update-item">
-                        <div class="update-version">v1.3</div>
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.4 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Module system — drop-in reaction packs (like game mods)</li>
-                            <li><span class="update-tag new">New</span> Event-driven runtime — Event Bus, State Machine, Reaction Engine</li>
-                            <li><span class="update-tag new">New</span> Browser URL detection — reacts to GitHub, YouTube, Amazon internal sites</li>
-                            <li><span class="update-tag new">New</span> 10 modules: Coding, Slack, Zoom, Spotify, GitHub, YouTube, Social, Weather, Health, Amazon Internal</li>
-                            <li><span class="update-tag new">New</span> 4-level priority system (Critical/Important/Normal/Low)</li>
-                            <li><span class="update-tag new">New</span> Context Engine — pet remembers mood, streaks, and adapts personality</li>
-                            <li><span class="update-tag new">New</span> Health reminders every 45 min (posture, water, Monster, breaks)</li>
-                            <li><span class="update-tag new">New</span> Floating score numbers (+3/-15) in pixel font above pet</li>
-                            <li><span class="update-tag new">New</span> Dev Console — floating terminal-style event log</li>
-                            <li><span class="update-tag new">New</span> Score History in Meow Status panel</li>
-                            <li><span class="update-tag new">New</span> Screen time tracking — warns after 4h on same app</li>
-                            <li><span class="update-tag new">New</span> SecretMeow tab — scan for .meow files from friends</li>
-                            <li><span class="update-tag new">New</span> Permission check with Fix buttons</li>
-                            <li><span class="update-tag improve">Improve</span> AI personality — acts like a real cat (purring, stretching, nuzzling)</li>
-                            <li><span class="update-tag improve">Improve</span> AI context-aware — mentions coding streaks, mood, time of day</li>
-                            <li><span class="update-tag improve">Improve</span> Module reactions won't interrupt touch/chat</li>
-                            <li><span class="update-tag improve">Improve</span> Energy stat now time-of-day based (not typing-based)</li>
-                            <li><span class="update-tag improve">Improve</span> Daily stat reset at 9 AM</li>
-                            <li><span class="update-tag fix">Fix</span> App name parsing (no more trailing " -")</li>
-                            <li><span class="update-tag fix">Fix</span> Pet skips itself (no self-reactions)</li>
-                            <li><span class="update-tag fix">Fix</span> Status panel scroll — titlebar stays fixed</li>
+                            <li><span class="update-tag new">New</span> Control Panel redesign with Claude Code colors</li>
+                            <li><span class="update-tag new">New</span> RPG-style pet status with ASCII art and stat bars</li>
+                            <li><span class="update-tag new">New</span> CR gossip engine with 3 modes (roast, compare, react)</li>
+                            <li><span class="update-tag new">New</span> Per-teammate Judge button with targeted assessment</li>
+                            <li><span class="update-tag new">New</span> Team stats persistence (team_stats.json)</li>
+                            <li><span class="update-tag new">New</span> Workplace module (Slack + Zoom + Chime + Teams)</li>
+                            <li><span class="update-tag new">New</span> Dark/light theme toggle in sidebar</li>
+                            <li><span class="update-tag new">New</span> Ctrl+Cmd+P shortcut to open control panel</li>
+                            <li><span class="update-tag improve">Improve</span> Page reorganization: Connection, Behavior, Identity, Modules, Advanced, Status</li>
+                            <li><span class="update-tag improve">Improve</span> Backend stat commands emit dev-logs with before→after values</li>
+                            <li><span class="update-tag improve">Improve</span> Pet can never die (minimum stat floor = 5)</li>
+                            <li><span class="update-tag fix">Fix</span> Crash on missing window handles (graceful fallback)</li>
+                            <li><span class="update-tag fix">Fix</span> Python3 path fallback for MCP modules</li>
+                            <li><span class="update-tag fix">Fix</span> Config write creates parent directories</li>
                         </ul>
                     </div>
-
                     <div class="update-item update-folded">
-                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.2 <span class="update-fold-hint"></span></div>
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.3 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Weather module — real weather daily</li>
-                            <li><span class="update-tag new">New</span> Spotify — comments on your music taste</li>
-                            <li><span class="update-tag new">New</span> Battery alert — warns when below 20%</li>
-                            <li><span class="update-tag new">New</span> Performance monitor — CPU/RAM overload warnings</li>
-                            <li><span class="update-tag new">New</span> Zoom meeting detection</li>
-                            <li><span class="update-tag new">New</span> 励志句子 — inspirational quotes</li>
-                            <li><span class="update-tag new">New</span> Typing detection</li>
-                            <li><span class="update-tag new">New</span> Time greetings — morning, lunch, evening, late night</li>
-                            <li><span class="update-tag new">New</span> User Profile</li>
-                            <li><span class="update-tag new">New</span> Cat kaomojis (=^･ω･^=)</li>
-                            <li><span class="update-tag new">New</span> Meow Status — Tamagotchi stats</li>
-                            <li><span class="update-tag new">New</span> Rage mode — tap 5x = angry!</li>
-                            <li><span class="update-tag new">New</span> Dark mode support</li>
+                            <li><span class="update-tag new">New</span> Module system with drop-in reaction packs</li>
+                            <li><span class="update-tag new">New</span> Event-driven runtime (Event Bus, State Machine)</li>
+                            <li><span class="update-tag new">New</span> Browser URL detection</li>
+                            <li><span class="update-tag new">New</span> 10 modules: Coding, Slack, Zoom, Spotify, GitHub, and more</li>
+                            <li><span class="update-tag new">New</span> 4-level priority system</li>
+                            <li><span class="update-tag new">New</span> Context Engine with mood and streaks</li>
+                            <li><span class="update-tag new">New</span> Health reminders, floating scores, dev console</li>
+                            <li><span class="update-tag new">New</span> SecretMeow and permission checker</li>
+                            <li><span class="update-tag improve">Improve</span> AI personality and context awareness</li>
+                            <li><span class="update-tag fix">Fix</span> App name parsing, self-reactions, scroll</li>
+                        </ul>
+                    </div>
+                    <div class="update-item update-folded">
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.2 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
+                        <div class="update-date">May 2026</div>
+                        <ul class="update-list">
+                            <li><span class="update-tag new">New</span> Weather, Spotify, battery, performance, Zoom</li>
+                            <li><span class="update-tag new">New</span> Meow Status (Tamagotchi stats), rage mode, dark mode</li>
                             <li><span class="update-tag improve">Improve</span> Custom floating settings panel</li>
                             <li><span class="update-tag fix">Fix</span> Message spam fix</li>
                         </ul>
                     </div>
-
                     <div class="update-item update-folded">
-                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.1 <span class="update-fold-hint"></span></div>
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.1 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Bedrock API Key auth</li>
-                            <li><span class="update-tag new">New</span> Chat mode (Ctrl+Cmd+C)</li>
-                            <li><span class="update-tag new">New</span> Touch reactions</li>
-                            <li><span class="update-tag new">New</span> Activity detection</li>
-                            <li><span class="update-tag new">New</span> Priority message scheduler</li>
-                            <li><span class="update-tag improve">Improve</span> Adaptive tray icon</li>
-                            <li><span class="update-tag fix">Fix</span> Local timezone, config persistence</li>
+                            <li><span class="update-tag new">New</span> API auth, chat mode, touch reactions, activity detection</li>
+                            <li><span class="update-tag fix">Fix</span> Timezone and config persistence</li>
                         </ul>
                     </div>
-
                     <div class="update-item update-folded">
-                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.0 <span class="update-fold-hint"></span></div>
+                        <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.0 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
                         <div class="update-date">Initial Release</div>
                         <ul class="update-list">
-                            <li>Desktop pet with pixel art cat sprite</li>
-                            <li>Periodic AI messages via Amazon Bedrock</li>
-                            <li>System tray with show/hide/settings/quit</li>
-                            <li>Configurable persona and interval</li>
+                            <li>Desktop pet with pixel art, periodic AI messages, system tray</li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Right Status Rail -->
+        <div class="status-rail">
+            <div class="rail-section">
+                <div class="rail-title">System Status</div>
+                <div class="rail-row"><span class="rail-row-label">Mode</span><span class="rail-row-value" id="railMode">Local</span></div>
+                <div class="rail-row"><span class="rail-row-label">Memory</span><span class="rail-row-value" id="railMemory">—</span></div>
+                <div class="rail-row"><span class="rail-row-label">CPU</span><span class="rail-row-value" id="railCpu">—</span></div>
+                <div class="rail-row"><span class="rail-row-label">Uptime</span><span class="rail-row-value" id="railUptime">—</span></div>
+            </div>
+            <div class="rail-section">
+                <div class="rail-title">Pet Status</div>
+                <div class="rail-status"><span class="rail-status-dot"></span><span id="railPetMood">Idle</span></div>
+                <div class="rail-pet-display" id="railPetEmoji">(=^･ω･^=)</div>
+                <div class="rail-pet-label" id="railPetActivity">Watching your screen</div>
+            </div>
+            <div class="rail-section">
+                <div class="rail-title">Quick Actions</div>
+                <div class="rail-action" onclick="resetConversation()"><span class="rail-action-icon">↺</span> Reset Conversation</div>
+                <div class="rail-action" onclick="clearMemory()"><span class="rail-action-icon">⊘</span> Clear Local Memory</div>
+                <div class="rail-action" onclick="exportLogs()"><span class="rail-action-icon">⎘</span> Export Logs</div>
+                <div class="rail-action" onclick="openDataFolder()"><span class="rail-action-icon">⊞</span> Open Data Folder</div>
+            </div>
+            <div class="rail-section" style="border-bottom:none;">
+                <div class="rail-title">Version</div>
+                <div style="font-size:12px;font-weight:600;">v1.4.0</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">You're up to date</div>
+            </div>
+        </div>
+
     </div>
 
-    <script>
-        function applyTheme(mode) {
-            if (!mode) mode = document.getElementById('themeMode').value;
-            localStorage.setItem('claudemeow_theme', mode);
-            const html = document.documentElement;
-            html.classList.remove('dark');
-            if (mode === 'dark') {
-                html.classList.add('dark');
-            } else if (mode === 'system') {
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    html.classList.add('dark');
-                }
-            }
-        }
+    <select id="themeMode" style="display:none;">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
 
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            const mode = localStorage.getItem('claudemeow_theme') || 'dark';
-            if (mode === 'system') applyTheme('system');
-        });
-
-        // Load saved theme on startup
-        applyTheme(localStorage.getItem('claudemeow_theme') || 'dark');
-
-        function hideWindow() {
-            window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'settings' });
-        }
-        function minimizeWindow() {
-            window.__TAURI_INTERNALS__.invoke('plugin:window|minimize', { label: 'settings' });
-        }
-        function maximizeWindow() {
-            window.__TAURI_INTERNALS__.invoke('plugin:window|toggle_maximize', { label: 'settings' });
-        }
-
-        function switchTab(name, el) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            el.classList.add('active');
-        }
-
-        function updateProviderFields() {
-            const v = document.getElementById('providerSelect').value;
-            document.getElementById('bedrockFields').style.display =
-                (v === 'bedrock_apikey' || v === 'bedrock_iam') ? '' : 'none';
-            document.getElementById('bedrockKeyRow').style.display =
-                (v === 'bedrock_apikey') ? '' : 'none';
-            document.getElementById('bedrockIamNote').style.display =
-                (v === 'bedrock_iam') ? '' : 'none';
-            document.getElementById('anthropicFields').style.display =
-                (v === 'anthropic') ? '' : 'none';
-            document.getElementById('openaiFields').style.display =
-                (v === 'openai') ? '' : 'none';
-        }
-
-        async function testApi() {
-            const statusEl = document.getElementById('testStatus');
-            const v = document.getElementById('providerSelect').value;
-            let apiKey, modelId, region;
-
-            if (v === 'anthropic') {
-                apiKey = document.getElementById('anthropicApiKey').value.trim();
-                modelId = document.getElementById('anthropicModelId').value;
-                region = '';
-            } else if (v === 'openai') {
-                apiKey = document.getElementById('openaiApiKey').value.trim();
-                modelId = document.getElementById('openaiModelId').value;
-                region = '';
-            } else {
-                apiKey = document.getElementById('apiKey').value.trim();
-                modelId = document.getElementById('modelId').value;
-                region = document.getElementById('region').value;
-            }
-
-            if (!apiKey && v !== 'bedrock_iam') {
-                statusEl.textContent = 'Enter an API key first';
-                statusEl.className = 'test-status error';
-                return;
-            }
-            statusEl.textContent = 'Testing...'; statusEl.className = 'test-status loading';
-            try {
-                await window.__TAURI_INTERNALS__.invoke('test_api', {
-                    provider: v, apiKey, region, modelId
-                });
-                statusEl.textContent = 'Connected! Settings saved.';
-                statusEl.className = 'test-status success';
-                await saveSettings();
-            } catch (e) {
-                statusEl.textContent = 'Failed: ' + String(e).slice(0, 80);
-                statusEl.className = 'test-status error';
-            }
-        }
-
-        async function loadSettings() {
-            document.getElementById('themeMode').value = localStorage.getItem('claudemeow_theme') || 'dark';
-            try {
-                const profile = await window.__TAURI_INTERNALS__.invoke('get_user_profile');
-                document.getElementById('userProfile').value = profile || '';
-            } catch(e) {}
-            try {
-                const config = await window.__TAURI_INTERNALS__.invoke('get_config');
-                document.getElementById('providerSelect').value = config.provider || 'bedrock_apikey';
-                document.getElementById('region').value = config.aws_region;
-                document.getElementById('apiKey').value = config.api_key || '';
-                document.getElementById('modelId').value = config.model_id;
-                document.getElementById('anthropicApiKey').value = config.api_key || '';
-                document.getElementById('anthropicModelId').value = config.anthropic_model_id || 'claude-haiku-4-5-20251001';
-                document.getElementById('openaiApiKey').value = config.openai_api_key || '';
-                document.getElementById('openaiModelId').value = config.openai_model_id || 'gpt-4o-mini';
-                document.getElementById('persona').value = config.persona;
-                document.getElementById('interval').value = config.interval_minutes;
-                document.getElementById('userNickname').value = config.user_nickname || '';
-                document.getElementById('activityEnabled').checked = config.activity_enabled !== false;
-                document.getElementById('devMode').checked = config.dev_mode || false;
-                updateProviderFields();
-            } catch (e) {
-                document.getElementById('status').textContent = 'Error loading: ' + e;
-            }
-        }
-
-        async function saveSettings() {
-            const provider = document.getElementById('providerSelect').value;
-            // Use the correct api_key field for the active provider
-            let apiKey = '';
-            if (provider === 'anthropic') {
-                apiKey = document.getElementById('anthropicApiKey').value;
-            } else if (provider !== 'openai') {
-                apiKey = document.getElementById('apiKey').value;
-            }
-            const config = {
-                provider,
-                aws_region: document.getElementById('region').value,
-                model_id: document.getElementById('modelId').value,
-                anthropic_model_id: document.getElementById('anthropicModelId').value,
-                openai_api_key: document.getElementById('openaiApiKey').value,
-                openai_model_id: document.getElementById('openaiModelId').value,
-                persona: document.getElementById('persona').value,
-                interval_minutes: parseInt(document.getElementById('interval').value),
-                nicknames: [],
-                activity_enabled: document.getElementById('activityEnabled').checked,
-                dev_mode: document.getElementById('devMode').checked,
-                auth_mode: 'apikey',
-                api_key: apiKey,
-                user_nickname: document.getElementById('userNickname').value.trim(),
-            };
-            try {
-                await window.__TAURI_INTERNALS__.invoke('set_config', { config });
-                const profileContent = document.getElementById('userProfile').value;
-                await window.__TAURI_INTERNALS__.invoke('set_user_profile', { content: profileContent });
-                document.getElementById('status').textContent = 'Saved';
-                setTimeout(() => { document.getElementById('status').textContent = ''; }, 2000);
-            } catch (e) {
-                document.getElementById('status').textContent = 'Error: ' + e;
-            }
-        }
-
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') hideWindow();
-        });
-
-        // ── Module Panel ──
-        async function loadModules() {
-            try {
-                const modules = await window.__TAURI_INTERNALS__.invoke('get_modules');
-                renderModules(modules);
-            } catch(e) {
-                console.error('loadModules error:', e);
-            }
-        }
-
-        function renderModules(modules) {
-            const container = document.getElementById('moduleList');
-            container.textContent = '';
-            if (!modules || modules.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'ext-card';
-                empty.style.cssText = 'justify-content:center;opacity:0.5;';
-                empty.textContent = 'No modules found. Click + Create to make one.';
-                container.appendChild(empty);
-                return;
-            }
-            for (const m of modules) {
-                const card = document.createElement('div');
-                card.className = 'ext-card';
-
-                const icon = document.createElement('div');
-                icon.className = 'ext-icon';
-                icon.style.background = 'rgba(194,91,40,0.08)';
-                icon.textContent = m.icon || '📦';
-                card.appendChild(icon);
-
-                const info = document.createElement('div');
-                info.className = 'ext-info';
-                const nameEl = document.createElement('div');
-                nameEl.className = 'ext-name';
-                nameEl.textContent = m.name + ' ';
-                const ver = document.createElement('span');
-                ver.style.cssText = 'font-size:10px;color:#888;font-weight:400;';
-                ver.textContent = 'v' + m.version;
-                nameEl.appendChild(ver);
-                info.appendChild(nameEl);
-                const desc = document.createElement('div');
-                desc.className = 'ext-desc';
-                desc.textContent = (m.description || '') + ' · ' + m.reaction_count + ' reactions';
-                info.appendChild(desc);
-                if (m.error) {
-                    const err = document.createElement('div');
-                    err.style.cssText = 'font-size:10px;color:#c25b28;margin-top:2px;';
-                    err.textContent = m.error;
-                    info.appendChild(err);
-                }
-                card.appendChild(info);
-
-                if (!m.builtin) {
-                    const del = document.createElement('button');
-                    del.textContent = '🗑';
-                    del.title = 'Delete module';
-                    del.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.5;';
-                    del.addEventListener('click', () => deleteUserMod(m.id));
-                    card.appendChild(del);
-                }
-
-                if (m.status === 'error') {
-                    const badge = document.createElement('span');
-                    badge.className = 'ext-badge';
-                    badge.style.cssText = 'background:rgba(194,91,40,0.1);color:#c25b28;';
-                    badge.textContent = 'Error';
-                    card.appendChild(badge);
-                } else {
-                    const lbl = document.createElement('label');
-                    lbl.className = 'toggle';
-                    lbl.style.margin = '0';
-                    const chk = document.createElement('input');
-                    chk.type = 'checkbox';
-                    chk.checked = m.status === 'active';
-                    chk.addEventListener('change', () => toggleMod(m.id, chk.checked));
-                    lbl.appendChild(chk);
-                    card.appendChild(lbl);
-                }
-                container.appendChild(card);
-            }
-        }
-
-        async function refreshModules() {
-            const btn = document.getElementById('refreshBtn');
-            btn.textContent = '...';
-            btn.disabled = true;
-            try {
-                const modules = await window.__TAURI_INTERNALS__.invoke('refresh_modules');
-                renderModules(modules);
-            } catch(e) {
-                console.error('refreshModules error:', e);
-            }
-            btn.textContent = 'Refresh';
-            btn.disabled = false;
-        }
-
-        async function toggleMod(id, enabled) {
-            try {
-                await window.__TAURI_INTERNALS__.invoke('toggle_module', { id, enabled });
-            } catch(e) {
-                console.error('toggleModule error:', e);
-            }
-        }
-
-        function showCreateForm() {
-            document.getElementById('createModuleForm').style.display = '';
-            document.getElementById('createStatus').textContent = '';
-            document.getElementById('newModName').focus();
-        }
-
-        function hideCreateForm() {
-            document.getElementById('createModuleForm').style.display = 'none';
-        }
-
-        function updateConditionFields() {
-            const event = document.getElementById('newModEvent').value;
-            const fieldSel = document.getElementById('newModCondField');
-            while (fieldSel.options.length) fieldSel.remove(0);
-            const opts = event === 'browser_url_changed'
-                ? [['site','Site'],['title','URL']]
-                : [['app_name','App Name'],['window_title','Window Title']];
-            opts.forEach(([val, label]) => fieldSel.add(new Option(label, val)));
-        }
-
-        async function saveNewModule() {
-            const statusEl = document.getElementById('createStatus');
-            const name = document.getElementById('newModName').value.trim();
-            const icon = document.getElementById('newModIcon').value.trim() || '📦';
-            const description = document.getElementById('newModDesc').value.trim();
-            const event = document.getElementById('newModEvent').value;
-            const conditionField = document.getElementById('newModCondField').value;
-            const conditionType = document.getElementById('newModCondType').value;
-            const conditionValue = document.getElementById('newModCondVal').value.trim();
-            const messages = document.getElementById('newModMessages').value
-                .split('\n').map(m => m.trim()).filter(m => m.length > 0);
-            const priority = parseInt(document.getElementById('newModPriority').value) || 5;
-            const cooldownMinutes = parseInt(document.getElementById('newModCooldown').value) || 10;
-
-            if (!name) { statusEl.textContent = 'Name is required'; statusEl.className = 'test-status error'; return; }
-            if (messages.length === 0) { statusEl.textContent = 'At least one message is required'; statusEl.className = 'test-status error'; return; }
-
-            const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            if (!id) { statusEl.textContent = 'Cannot generate valid ID from name'; statusEl.className = 'test-status error'; return; }
-
-            statusEl.textContent = 'Saving...'; statusEl.className = 'test-status loading';
-            try {
-                const modules = await window.__TAURI_INTERNALS__.invoke('create_module', {
-                    id, name, icon, description, event,
-                    conditionField, conditionType, conditionValue,
-                    messages, priority, cooldownMinutes
-                });
-                renderModules(modules);
-                hideCreateForm();
-                ['newModName','newModIcon','newModDesc','newModCondVal','newModMessages'].forEach(fid => {
-                    document.getElementById(fid).value = '';
-                });
-                statusEl.textContent = '';
-            } catch(e) {
-                statusEl.textContent = 'Error: ' + String(e).slice(0, 100);
-                statusEl.className = 'test-status error';
-            }
-        }
-
-        async function deleteUserMod(id) {
-            if (!confirm('Delete module "' + id + '"? This cannot be undone.')) return;
-            try {
-                const modules = await window.__TAURI_INTERNALS__.invoke('delete_user_module', { id });
-                renderModules(modules);
-            } catch(e) {
-                alert('Failed to delete: ' + e);
-            }
-        }
-
-        function escHtml(t) {
-            if (!t) return '';
-            const d = document.createElement('div');
-            d.textContent = t;
-            return d.innerHTML;
-        }
-
-        function toggleDevWindow(enabled) {
-            if (enabled) {
-                window.__TAURI_INTERNALS__.invoke('plugin:window|show', { label: 'dev' });
-            } else {
-                window.__TAURI_INTERNALS__.invoke('plugin:window|hide', { label: 'dev' });
-            }
-        }
-
-        async function checkPerms() {
-            const container = document.getElementById('permStatus');
-            container.innerHTML = '<div style="font-size:12px;color:#a09890;">Checking...</div>';
-            try {
-                const perms = await window.__TAURI_INTERNALS__.invoke('check_permissions_status');
-                let html = '';
-                const items = [
-                    { key: 'accessibility', label: 'Accessibility (app detection)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility' },
-                    { key: 'window_titles', label: 'Window Titles (activity context)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility' },
-                    { key: 'browser_url', label: 'Browser URL (Chrome automation)', fix: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Automation' },
-                ];
-                let hasIssues = false;
-                for (const item of items) {
-                    const ok = perms[item.key];
-                    const icon = ok ? '✓' : '✗';
-                    const color = ok ? '#5a9e6f' : '#c25b28';
-                    const status = ok ? 'Granted' : 'Not granted';
-                    if (!ok) hasIssues = true;
-                    html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;">
-                        <span style="color:${color};font-weight:bold;font-size:14px;">${icon}</span>
-                        <span style="color:#4a4641;">${item.label}</span>
-                        <span style="color:${color};margin-left:auto;font-weight:500;">${status}</span>
-                        ${!ok ? '<button class="btn-secondary" style="font-size:10px;padding:2px 8px;margin-left:4px;" onclick="openSettings(\'' + item.fix + '\')">Fix</button>' : ''}
-                    </div>`;
-                }
-                if (hasIssues) {
-                    html += `<div style="font-size:11px;color:#a09890;margin-top:10px;line-height:1.8;padding:10px;background:rgba(0,0,0,0.03);border-radius:6px;">
-                        <b style="color:#c25b28;">How to fix:</b><br>
-                        1. Click "Fix" to open System Settings<br>
-                        2. If running via terminal (<code>cargo run</code>): add your <b>Terminal/iTerm2</b> app<br>
-                        &nbsp;&nbsp;&nbsp;If running as .app: add <b>ClaudeMeow</b><br>
-                        3. Toggle it ON (you may need to click + to add it first)<br>
-                        4. Restart ClaudeMeow<br><br>
-                        <b>For Browser URL:</b> also go to Automation and allow your terminal to control <b>Google Chrome</b>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            } catch(e) {
-                container.innerHTML = '<div style="font-size:12px;color:#c25b28;">Error checking: ' + e + '</div>';
-            }
-        }
-
-        function openSettings(url) {
-            window.__TAURI_INTERNALS__.invoke('open_system_settings', { url });
-        }
-
-        // ── Priority Tab ──
-        let priorityData = {};
-        const DEFAULT_LEVELS = { health: 1, 'amazon-internal': 2, coding: 2, zoom: 2, slack: 3, github: 3, spotify: 3, social: 3, youtube: 3, weather: 3 };
-
-        async function loadPriorities() {
-            try {
-                const modules = await window.__TAURI_INTERNALS__.invoke('get_modules');
-                const overrides = await window.__TAURI_INTERNALS__.invoke('get_priority_overrides');
-                priorityData = {};
-                for (const m of modules) {
-                    const def = DEFAULT_LEVELS[m.id] || 3;
-                    priorityData[m.id] = { name: m.name, level: overrides[m.id] || def, default: def };
-                }
-                renderPriorities();
-            } catch(e) { console.error(e); }
-        }
-
-        function renderPriorities() {
-            const container = document.getElementById('priorityList');
-            const sorted = Object.entries(priorityData).sort((a, b) => a[1].level - b[1].level);
-            let html = '';
-            for (const [id, data] of sorted) {
-                html += `<div class="priority-row">
-                    <div class="priority-name" style="flex:1;">${escHtml(data.name)}</div>
-                    <div class="priority-levels">
-                        ${[1,2,3,4].map(l =>
-                            `<span class="plvl plvl-${l} ${data.level === l ? 'active' : ''}" onclick="setLevel('${id}', ${l})">${l}</span>`
-                        ).join('')}
-                    </div>
-                </div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        function setLevel(id, level) {
-            priorityData[id].level = level;
-            renderPriorities();
-        }
-
-        async function savePriorities() {
-            const overrides = {};
-            for (const [id, data] of Object.entries(priorityData)) {
-                overrides[id] = data.level;
-            }
-            try {
-                await window.__TAURI_INTERNALS__.invoke('set_priority_overrides', { overrides });
-                document.getElementById('priorityStatus').textContent = 'Saved!';
-                setTimeout(() => document.getElementById('priorityStatus').textContent = '', 2000);
-            } catch(e) {
-                document.getElementById('priorityStatus').textContent = 'Error: ' + e;
-            }
-        }
-
-        async function resetPriorities() {
-            for (const [id, data] of Object.entries(priorityData)) {
-                data.level = data.default;
-            }
-            renderPriorities();
-            await window.__TAURI_INTERNALS__.invoke('set_priority_overrides', { overrides: {} });
-            document.getElementById('priorityStatus').textContent = 'Reset to defaults';
-            setTimeout(() => document.getElementById('priorityStatus').textContent = '', 2000);
-        }
-
-        async function scanMeow() {
-            const container = document.getElementById('meowResult');
-            container.innerHTML = '<div style="font-size:12px;color:#a09890;">Scanning...</div>';
-            try {
-                const result = await window.__TAURI_INTERNALS__.invoke('scan_secret_meow');
-                if (result.found) {
-                    let html = `<div style="padding:12px;background:rgba(90,158,111,0.08);border:1px solid rgba(90,158,111,0.2);border-radius:8px;">
-                        <div style="font-size:14px;font-weight:600;color:#5a9e6f;margin-bottom:8px;">
-                            ${result.from_littleshrimp ? '🦐 ' : '🐱 '}${escHtml(result.message)}
-                        </div>
-                        <div style="font-size:11px;color:#7a756e;">
-                            Files found: ${result.files.map(f => '<code>' + escHtml(f) + '</code>').join(', ')}
-                        </div>
-                    </div>`;
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = `<div style="padding:12px;background:rgba(0,0,0,0.03);border-radius:8px;font-size:12px;color:#a09890;">
-                        No .meow files found yet 🐱
-                    </div>`;
-                }
-            } catch(e) {
-                container.innerHTML = '<div style="font-size:12px;color:#c25b28;">Error: ' + e + '</div>';
-            }
-        }
-
-        async function checkForUpdate() {
-            const status = document.getElementById('updateStatus');
-            const btn = document.getElementById('updateBtn');
-            btn.textContent = 'Checking...';
-            btn.disabled = true;
-            status.innerHTML = '';
-            try {
-                const result = await window.__TAURI_INTERNALS__.invoke('plugin:updater|check');
-                if (result && result.available) {
-                    btn.textContent = 'Check for Updates';
-                    btn.disabled = false;
-                    status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(90,158,111,0.08);border:1px solid rgba(90,158,111,0.15);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:#5a9e6f;">v${result.version} available</div>
-                            <div style="font-size:11px;color:#a09890;margin-top:2px;">${result.body || 'New version ready to install'}</div>
-                        </div>
-                        <button class="btn-primary" onclick="installUpdate()" style="white-space:nowrap;">Update Now</button>
-                    </div>`;
-                } else {
-                    btn.textContent = 'Check for Updates';
-                    btn.disabled = false;
-                }
-            } catch(e) {
-                btn.textContent = 'Check for Updates';
-                btn.disabled = false;
-                const msg = String(e);
-                if (msg.includes('valid release')) {
-                    // No release published yet — not an error for users
-                } else {
-                    status.innerHTML = `<div style="margin-top:6px;font-size:11px;color:#a09890;">Unable to check for updates</div>`;
-                }
-            }
-        }
-
-        async function installUpdate() {
-            const status = document.getElementById('updateStatus');
-            status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(194,91,40,0.08);border-radius:8px;font-size:12px;color:#c25b28;">Downloading and installing...</div>`;
-            try {
-                await window.__TAURI_INTERNALS__.invoke('plugin:updater|download_and_install');
-                status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(90,158,111,0.08);border-radius:8px;font-size:12px;color:#5a9e6f;">Restarting...</div>`;
-                await window.__TAURI_INTERNALS__.invoke('plugin:process|restart');
-            } catch(e) {
-                status.innerHTML = `<div style="margin-top:8px;padding:10px 14px;background:rgba(194,91,40,0.08);border-radius:8px;font-size:11px;color:#c25b28;">Update failed: ${String(e).slice(0,60)}</div>`;
-            }
-        }
-
-        loadSettings();
-        loadModules();
-        loadPriorities();
-    </script>
+    <script src="js/settings.js"></script>
 </body>
 </html>

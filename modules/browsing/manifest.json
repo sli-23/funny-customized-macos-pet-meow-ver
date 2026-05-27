@@ -1,0 +1,17 @@
+{
+    "id": "browsing",
+    "name": "Browsing & Files",
+    "version": "1.0.0",
+    "description": "Reacts to Finder, browsers, Preview, and general file management",
+    "author": "ClaudeMeow",
+    "icon": "📂",
+    "builtin": true,
+    "permissions": [
+        "active_app",
+        "browser_url"
+    ],
+    "eventSubscriptions": [
+        "active_app_changed",
+        "browser_url_changed"
+    ]
+}

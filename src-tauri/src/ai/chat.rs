@@ -11,12 +11,7 @@ pub(crate) fn build_chat_prompt(history_block: &str, user_text: &str) -> String 
     }
 }
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-}
+use crate::util::now_secs;
 
 #[tauri::command]
 pub async fn chat_message(user_text: String) -> Result<String, String> {

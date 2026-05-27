@@ -1,0 +1,201 @@
+/* ClaudeMeow — Pages: content pane, page headers, sections, panels */
+
+.content-pane {
+    grid-row: 1;
+    overflow-y: auto;
+    padding: 28px 36px 28px;
+    background: var(--bg-surface);
+}
+.content-pane::-webkit-scrollbar { width: 5px; }
+.content-pane::-webkit-scrollbar-track { background: transparent; }
+.content-pane::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Pages ── */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 80ms ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Page Header ── */
+.page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+.page-number {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--accent);
+    opacity: 0.6;
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+.page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.page-title .save-dot { display: none; }
+.page-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    line-height: 1.4;
+}
+.page-meta-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.page-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.page-meta-label {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.page-meta-value {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-dot);
+}
+.save-indicator {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 9px;
+    font-weight: 500;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.save-indicator.show { opacity: 1; }
+
+/* ── Sections ── */
+.section {
+    margin-bottom: 28px;
+}
+.section:last-child { margin-bottom: 0; }
+
+.section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.section-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: -8px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+/* ── Section Panel (bordered container) ── */
+.section-panel {
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    padding: 18px 20px;
+    background: var(--bg-panel);
+    margin-bottom: 16px;
+}
+.section-panel:last-child { margin-bottom: 0; }
+
+/* ── Section Group (create form etc) ── */
+.section-group {
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    padding: 18px 20px;
+    background: var(--bg-panel);
+}
+
+/* ── About This (helper text block) ── */
+.about-block {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--bg-app);
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+.about-block-label {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.about-block-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ── Section header with actions ── */
+.section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.section-header .section-title { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.section-header-actions { display: flex; gap: 6px; }
+
+/* ── Permission rows ── */
+#permStatus { margin-top: 4px; }
+.perm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: var(--bg-panel);
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(4px);
+    animation: permSlideIn 0.3s ease forwards;
+}
+.perm-row:nth-child(1) { animation-delay: 0s; }
+.perm-row:nth-child(2) { animation-delay: 0.08s; }
+.perm-row:nth-child(3) { animation-delay: 0.16s; }
+@keyframes permSlideIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+.perm-row:last-child { margin-bottom: 0; }
+.perm-label { font-weight: 500; color: var(--text); }
+.perm-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+.perm-granted { color: var(--green); font-weight: 500; }
+.perm-denied { color: var(--red); font-weight: 500; }

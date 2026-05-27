@@ -27,21 +27,13 @@ impl Default for PetStatus {
 }
 
 fn status_path() -> PathBuf {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("claude-meow-pet")
-        .join("status.json")
+    crate::paths::config_dir().join("status.json")
 }
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-}
+use crate::util::now_secs;
 
 fn clamp(val: i32) -> u32 {
-    val.max(0).min(100) as u32
+    val.max(5).min(100) as u32
 }
 
 pub fn load_status() -> PetStatus {
@@ -65,7 +57,9 @@ fn save_status(status: &PetStatus) {
         fs::create_dir_all(parent).ok();
     }
     if let Ok(data) = serde_json::to_string_pretty(status) {
-        fs::write(path, data).ok();
+        if let Err(e) = fs::write(&path, data) {
+            eprintln!("[ClaudeMeow] status save failed: {}", e);
+        }
     }
 }
 
@@ -136,47 +130,77 @@ pub fn get_pet_status() -> PetStatus {
 }
 
 #[tauri::command]
-pub fn pet_touched() -> PetStatus {
+pub fn pet_touched(app: tauri::AppHandle) -> PetStatus {
+    use tauri::Emitter;
     let mut status = load_status();
+    let (old_hp, old_love) = (status.happiness, status.love);
     apply_touch(&mut status);
     status.last_update = now_secs();
     save_status(&status);
+    let _ = app.emit("dev-log", serde_json::json!({
+        "tag": "STATS", "tag_class": "reaction",
+        "message": format!("touch: HP {}→{} (+{}), ♥ {}→{} (+{})", old_hp, status.happiness, status.happiness - old_hp, old_love, status.love, status.love - old_love)
+    }));
     status
 }
 
 #[tauri::command]
-pub fn pet_chatted() -> PetStatus {
+pub fn pet_chatted(app: tauri::AppHandle) -> PetStatus {
+    use tauri::Emitter;
     let mut status = load_status();
+    let (old_hp, old_love) = (status.happiness, status.love);
     apply_chat(&mut status);
     status.last_update = now_secs();
     save_status(&status);
+    let _ = app.emit("dev-log", serde_json::json!({
+        "tag": "STATS", "tag_class": "reaction",
+        "message": format!("chat: HP {}→{} (+{}), ♥ {}→{} (+{})", old_hp, status.happiness, status.happiness - old_hp, old_love, status.love, status.love - old_love)
+    }));
     status
 }
 
 #[tauri::command]
-pub fn pet_angry() -> PetStatus {
+pub fn pet_angry(app: tauri::AppHandle) -> PetStatus {
+    use tauri::Emitter;
     let mut status = load_status();
+    let (old_hp, old_love) = (status.happiness, status.love);
     apply_angry(&mut status);
     status.last_update = now_secs();
     save_status(&status);
+    let _ = app.emit("dev-log", serde_json::json!({
+        "tag": "STATS", "tag_class": "error",
+        "message": format!("rage: HP {}→{} ({}), ♥ {}→{} ({})", old_hp, status.happiness, status.happiness as i32 - old_hp as i32, old_love, status.love, status.love as i32 - old_love as i32)
+    }));
     status
 }
 
 #[tauri::command]
-pub fn pet_fed() -> PetStatus {
+pub fn pet_fed(app: tauri::AppHandle) -> PetStatus {
+    use tauri::Emitter;
     let mut status = load_status();
+    let old_hgr = status.hunger;
     apply_fed(&mut status);
     status.last_update = now_secs();
     save_status(&status);
+    let _ = app.emit("dev-log", serde_json::json!({
+        "tag": "STATS", "tag_class": "reaction",
+        "message": format!("feed: HGR {}→{} (+{})", old_hgr, status.hunger, status.hunger - old_hgr)
+    }));
     status
 }
 
 #[tauri::command]
-pub fn pet_rested() -> PetStatus {
+pub fn pet_rested(app: tauri::AppHandle) -> PetStatus {
+    use tauri::Emitter;
     let mut status = load_status();
+    let old_mp = status.energy;
     apply_rested(&mut status);
     status.last_update = now_secs();
     save_status(&status);
+    let _ = app.emit("dev-log", serde_json::json!({
+        "tag": "STATS", "tag_class": "reaction",
+        "message": format!("rest: MP {}→{} (+{})", old_mp, status.energy, status.energy - old_mp)
+    }));
     status
 }
 
@@ -209,8 +233,7 @@ pub(crate) fn apply_rested(status: &mut PetStatus) {
     update_mood(status);
 }
 
-// ── Disk I/O helpers with injectable path (used by tests via tempdir) ─────────
-
+#[cfg(test)]
 pub(crate) fn save_status_to(status: &PetStatus, path: &std::path::Path) {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).ok();
@@ -220,6 +243,7 @@ pub(crate) fn save_status_to(status: &PetStatus, path: &std::path::Path) {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn load_status_from(path: &std::path::Path) -> PetStatus {
     if path.exists() {
         if let Ok(data) = fs::read_to_string(path) {

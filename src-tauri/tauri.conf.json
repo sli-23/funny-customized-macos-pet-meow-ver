@@ -1,13 +1,21 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
   "productName": "ClaudeMeow",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "identifier": "com.claudemeow.pet",
   "build": {
     "frontendDist": "../ui"
   },
   "app": {
     "macOSPrivateApi": true,
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["**"]
+        }
+      }
+    },
     "windows": [
       {
         "label": "main",
@@ -24,43 +32,34 @@
       },
       {
         "label": "settings",
-        "title": "",
+        "title": "ClaudeMeow Settings",
         "url": "settings.html",
-        "width": 640,
-        "height": 780,
+        "width": 1020,
+        "height": 680,
+        "minWidth": 780,
+        "minHeight": 500,
         "resizable": true,
         "decorations": true,
         "transparent": false,
         "visible": false,
         "center": true,
-        "titleBarStyle": "Overlay"
-      },
-      {
-        "label": "status",
-        "title": "",
-        "url": "status.html",
-        "width": 360,
-        "height": 430,
-        "resizable": true,
-        "decorations": true,
-        "transparent": false,
-        "visible": false,
-        "center": true,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 20, "y": 20 }
       },
       {
         "label": "dev",
         "title": "",
         "url": "dev.html",
         "width": 500,
-        "height": 150,
+        "height": 200,
         "resizable": true,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "visible": false,
         "x": 100,
-        "y": 5
+        "y": 270
       }
     ]
   },

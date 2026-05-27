@@ -1,0 +1,471 @@
+/* ClaudeMeow — Components: module cards, priority, team table, updates, CR intel */
+
+/* ═══ MODULE CARDS ═══ */
+#moduleList {
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-panel);
+}
+.ext-card {
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.ext-card:last-child { border-bottom: none; }
+.ext-card:hover { background: var(--nav-hover); }
+.ext-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    background: var(--bg-app);
+    flex-shrink: 0;
+}
+.ext-info { flex: 1; min-width: 0; }
+.ext-name { font-size: 12px; font-weight: 500; color: var(--text); }
+.ext-desc { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+.ext-badge {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.ext-badge.active { background: rgba(74, 155, 100, 0.08); color: var(--green); }
+
+/* ── Create Module Form ── */
+#createModuleForm .section-group { padding: 18px 20px; }
+
+/* ── Priority ── */
+.priority-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 0;
+}
+.priority-row + .priority-row { border-top: 1px solid var(--border-subtle); }
+.priority-name { flex: 1; font-size: 12px; color: var(--text); }
+.priority-levels { display: flex; gap: 4px; }
+.plvl {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border); color: var(--text-muted);
+    background: transparent; transition: all 0.1s;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+.plvl:hover { border-color: var(--accent); color: var(--accent); }
+.plvl.active { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+
+/* ── Updates ── */
+.update-item { padding: 12px 0; }
+.update-item + .update-item { border-top: 1px solid var(--border-subtle); }
+.update-version {
+    font-size: 14px; font-weight: 600; cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between; color: var(--text);
+}
+.update-date {
+    font-size: 10px; color: var(--text-muted); margin: 4px 0 8px;
+    font-family: 'SF Mono', 'Menlo', monospace; letter-spacing: 0.3px; text-transform: uppercase;
+}
+.update-list { list-style: none; }
+.update-list li {
+    font-size: 13px; color: var(--text-secondary); padding: 3px 0 3px 12px;
+    position: relative; line-height: 1.6;
+}
+.update-list li::before {
+    content: ''; position: absolute; left: 0; top: 10px;
+    width: 4px; height: 4px; border-radius: 50%; background: var(--text-muted);
+}
+.update-tag {
+    display: inline-block; font-size: 9px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 5px;
+    border-radius: 3px; margin-right: 4px; font-family: 'SF Mono', 'Menlo', monospace;
+}
+.update-tag.new { background: rgba(74, 155, 100, 0.08); color: var(--green); }
+.update-tag.fix { background: rgba(155, 74, 58, 0.06); color: var(--red); }
+.update-tag.improve { background: rgba(100, 130, 180, 0.07); color: #6A8AB0; }
+.update-list, .update-date {
+    overflow: hidden;
+    max-height: 500px;
+    opacity: 1;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.2s ease;
+}
+.update-folded .update-list, .update-folded .update-date {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+.update-fold-hint {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+.update-fold-hint:hover { background: var(--nav-hover); }
+.update-fold-hint svg {
+    width: 12px;
+    height: 12px;
+    stroke: var(--text-muted);
+    stroke-width: 2;
+    fill: none;
+    transition: transform 0.15s ease;
+}
+.update-folded .update-fold-hint svg { transform: rotate(0deg); }
+.update-item:not(.update-folded) .update-fold-hint svg { transform: rotate(90deg); }
+
+/* ── Team Table ── */
+.team-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.team-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    padding: 8px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    border-bottom: 1px solid var(--border);
+}
+.team-table td {
+    padding: 10px;
+    border-top: 1px solid var(--border-subtle);
+    vertical-align: middle;
+}
+.team-table .alias {
+    font-weight: 600;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: opacity 0.12s;
+}
+.team-table .alias:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
+.team-table .name { color: var(--text-secondary); font-size: 12px; }
+.nick-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--bg-input);
+    font-family: inherit;
+    color: var(--text);
+    height: 30px;
+    transition: border-color 0.12s;
+}
+.nick-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--ring); }
+.btn-judge {
+    height: 22px;
+    padding: 0 7px;
+    font-size: 9px;
+    font-weight: 500;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.12s, border-color 0.12s;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.btn-judge:hover { color: var(--accent); border-color: var(--accent); }
+.btn-judge:disabled { opacity: 0.4; cursor: default; }
+.btn-judge.judging {
+    color: var(--accent);
+    border-color: var(--accent);
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+}
+.btn-judge.judging::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 40%;
+    background: var(--accent);
+    border-radius: 1px;
+    animation: judgeSlide 1s ease-in-out infinite;
+}
+@keyframes judgeSlide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
+/* ── CR Intelligence ── */
+.cr-intel-header { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.cr-intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.cr-intel-card { padding: 8px 10px; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 6px; }
+.cr-intel-name { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.cr-intel-metrics { display: flex; gap: 8px; flex-wrap: wrap; }
+.cr-metric { font-size: 10px; color: var(--text-muted); }
+.cr-metric strong { color: var(--accent); font-weight: 600; }
+.cr-intel-last { font-size: 9px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.cr-intel-comparisons { display: flex; gap: 16px; font-size: 10px; color: var(--text-secondary); padding: 6px 0; }
+.cr-intel-history { display: flex; flex-direction: column; gap: 3px; }
+.cr-history-item { font-size: 10px; color: var(--text-secondary); padding: 3px 0; border-bottom: 1px solid var(--border-subtle); }
+.cr-history-item:last-child { border-bottom: none; }
+.cr-history-author { font-family: 'SF Mono', 'Menlo', monospace; font-weight: 500; color: var(--accent); font-size: 10px; }
+
+/* ── Pet Status Bars ── */
+.pet-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+.pet-stat-row + .pet-stat-row { border-top: 1px solid var(--border-subtle); }
+.pet-stat-label {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 36px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+.pet-stat-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.pet-stat-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+.pet-stat-fill.happiness { background: #F0B840; }
+.pet-stat-fill.energy { background: var(--accent); }
+.pet-stat-fill.hunger { background: var(--green); }
+.pet-stat-fill.love { background: #E06080; }
+.pet-stat-val {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 28px;
+    text-align: right;
+}
+.pet-mood-emoji {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+}
+.pet-mood-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: capitalize;
+}
+
+/* ── RPG Card ── */
+.rpg-card {
+    display: flex;
+    border: 1px solid var(--border-panel);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-panel);
+    margin-top: 24px;
+}
+.rpg-portrait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 28px;
+    border-right: 1px solid var(--border-subtle);
+    background: var(--bg-app);
+    min-width: 150px;
+    position: relative;
+}
+.rpg-stats {
+    flex: 1;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.rpg-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.rpg-name {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.rpg-level {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--ring);
+    padding: 2px 7px;
+    border-radius: 3px;
+}
+.rpg-mood {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'SF Mono', 'Menlo', monospace;
+    letter-spacing: 0.3px;
+}
+.rpg-mood span { color: var(--accent); font-weight: 600; }
+.rpg-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+.ascii-cat {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0;
+    white-space: pre;
+    animation: catIdle 4s ease-in-out infinite;
+}
+@keyframes catIdle {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-2px) rotate(-0.5deg); }
+    50% { transform: translateY(-3px) rotate(0deg); }
+    75% { transform: translateY(-1px) rotate(0.5deg); }
+}
+.rpg-portrait::before {
+    content: '✦';
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-size: 8px;
+    color: var(--accent);
+    opacity: 0;
+    animation: sparkle 3s ease-in-out infinite;
+}
+.rpg-portrait::after {
+    content: '';
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.1;
+    animation: catShadow 4s ease-in-out infinite;
+}
+@keyframes catShadow {
+    0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.1; }
+    50% { transform: translateX(-50%) scaleX(0.8); opacity: 0.06; }
+}
+@keyframes sparkle {
+    0%, 70%, 100% { opacity: 0; transform: scale(0.5); }
+    80% { opacity: 0.8; transform: scale(1.2); }
+    90% { opacity: 0; transform: scale(0.8); }
+}
+.ascii-cat-mood {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+/* ── Activity History ── */
+.activity-list {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    padding: 6px;
+}
+.activity-list::-webkit-scrollbar { width: 4px; }
+.activity-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+}
+.activity-item:hover { background: var(--nav-hover); }
+.activity-time {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    min-width: 36px;
+}
+.activity-source {
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 10px;
+}
+.activity-detail {
+    flex: 1;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.activity-delta {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: right;
+}
+.activity-delta.positive { color: var(--green); }
+.activity-delta.negative { color: var(--red); }
+
+/* ── RPG Info Block ── */
+.rpg-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.rpg-info-block {}
+.rpg-info-label {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+}
+.rpg-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+.rpg-info-list strong {
+    color: var(--accent);
+    font-weight: 600;
+}
