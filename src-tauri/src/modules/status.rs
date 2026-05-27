@@ -281,8 +281,8 @@ mod tests {
     }
 
     #[test]
-    fn test_clamp_negative_returns_zero() {
-        assert_eq!(clamp(-10), 0);
+    fn test_clamp_negative_returns_minimum() {
+        assert_eq!(clamp(-10), 5);
     }
 
     #[test]
@@ -401,10 +401,10 @@ mod tests {
     }
 
     #[test]
-    fn test_stats_clamped_to_0_on_underflow() {
+    fn test_stats_clamped_to_minimum_on_underflow() {
         let mut s = status_at(5, 80, 60, 50);
-        apply_angry(&mut s); // -15 happiness → would go negative
-        assert_eq!(s.happiness, 0);
+        apply_angry(&mut s); // -15 happiness → clamped to minimum (5)
+        assert_eq!(s.happiness, 5);
     }
 
     // ── Checkpoint 2: disk I/O with tempdir ──────────────────────────────────
