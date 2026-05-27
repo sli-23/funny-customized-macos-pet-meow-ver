@@ -251,16 +251,16 @@ pub async fn trigger_cr_comment(app: tauri::AppHandle) -> Result<String, String>
 
         match gossip_mode {
             "comparison" => format!(
-                "You are a snarky cat comparing your owner's teammates' coding activity.\n{}\n{} {}\nGenerate ONE short comparison quip (under 50 chars). Compare activity levels. MUST mention \"{}\". Start with 😼",
+                "You are a cute, playful cat teasing your owner's teammates.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\n{}\n{} {}\nGenerate ONE short teasing comparison (under 50 chars). MUST mention \"{}\". Start with 😼",
                 stats_context, lang_hint, sass_hint, display_name
             ),
             "content" => format!(
-                "You are a snarky cat reacting to WHAT a teammate is working on.\nTeammate: \"{}\"\nThey're working on: \"{}\"\nPackage: \"{}\"\nFiles changed: {}\n{} {}\nReact to the TOPIC of their work (not just that they committed). Be specific about what \"{}\" means. MUST mention \"{}\". Under 50 chars. Start with 😼",
-                display_name, title, package, changes, lang_hint, sass_hint, title, display_name
+                "You are a cute, playful cat reacting to what a teammate is working on.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nWorking on: \"{}\"\nFiles changed: {}\n{} {}\nReact to the TOPIC. Be specific about \"{}\". MUST mention \"{}\". Under 50 chars. Start with 😼",
+                display_name, title, changes, lang_hint, sass_hint, title, display_name
             ),
             _ => format!(
-                "You are a snarky cat roasting your owner's teammate's coding HABITS.\nTeammate: \"{}\"\nPackage: \"{}\"\nCommit: \"{}\"\nFiles changed: {}\n{}{} {}\nRoast their coding habits (PR size, frequency, package choice). MUST use the name \"{}\". Under 50 chars. Start with 😼 {}.",
-                display_name, package, title, changes, stats_context, lang_hint, sass_hint, display_name, display_name
+                "You are a cute, playful cat teasing your owner's teammate about their code.\nYou are NOT male — never use 这哥们/兄弟/bro/dude.\nNo markdown, no bullets, plain text only.\nTeammate: \"{}\"\nCommit: \"{}\"\nFiles changed: {}\n{}{} {}\nTease their habits (PR size, speed). MUST use name \"{}\". Under 50 chars. Start with 😼 {}.",
+                display_name, title, changes, stats_context, lang_hint, sass_hint, display_name, display_name
             ),
         }
     };
@@ -381,15 +381,15 @@ pub async fn trigger_targeted_gossip(app: tauri::AppHandle, target_alias: String
     };
 
     let prompt = format!(
-        "You are a snarky cat giving a FULL ASSESSMENT of a teammate's recent coding activity.\n\nTarget: \"{}\" (alias: {})\n{}\nRecent commits:\n{}\n\n{} {}\n\nGive a SHORT (under 60 chars) brutally honest assessment of this person's coding habits. Mention their name. Comment on their patterns (speed, PR size, package focus). Start with 😼",
-        display_name, target_alias, stats_context, recent_titles, lang_hint, sass_hint
+        "You are a cute, playful cat teasing your owner's teammate about their code.\nYou are NOT male. You are a cute cat — use soft teasing, not bro-talk.\nNEVER use: 这哥们, 兄弟, bro, dude, man.\nNEVER use markdown (no **, no bullets, no headers).\n\nTarget: \"{}\"\n{}\nRecent commits:\n{}\n\n{} {}\n\nWrite ONE short teasing comment (under 50 chars, plain text only). Mention their name. Be cute but observant. Start with 😼 {}:",
+        display_name, stats_context, recent_titles, lang_hint, sass_hint, display_name
     );
 
     let _ = app.emit("dev-log", serde_json::json!({
         "tag": "JUDGE", "tag_class": "reaction", "message": format!("Judging {}...", display_name)
     }));
 
-    let message = crate::ai::send_to_ai(&config, &prompt, 100, 0.95).await
+    let message = crate::ai::send_to_ai(&config, &prompt, 60, 0.9).await
         .map_err(|e| format!("AI failed: {}", e))?;
 
     let _ = app.emit("dev-log", serde_json::json!({
