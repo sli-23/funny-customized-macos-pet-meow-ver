@@ -61,6 +61,29 @@ pub fn log_status_change(
 }
 
 #[tauri::command]
+pub fn get_meow_nicknames() -> Vec<String> {
+    crate::runtime::secret_meow::get_global_nicknames()
+}
+
+#[tauri::command]
+pub fn reload_secret_meow() -> Result<(), String> {
+    let state = crate::runtime::secret_meow::SecretMeowState::try_load();
+    crate::runtime::secret_meow::reload_global_context(&state);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_meow_public_info() -> serde_json::Value {
+    let nicks = crate::runtime::secret_meow::get_global_nicknames();
+    let personality = crate::runtime::secret_meow::get_global_personality_context();
+    serde_json::json!({
+        "nicknames": nicks,
+        "personality": personality,
+        "loaded": !nicks.is_empty(),
+    })
+}
+
+#[tauri::command]
 pub fn open_external_url(url: String) -> Result<(), String> {
     std::process::Command::new("open")
         .arg(&url)

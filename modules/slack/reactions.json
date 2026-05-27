@@ -1,0 +1,36 @@
+{
+  "reactions": [
+    {
+      "id": "dm-shuying",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "window_title", "contains": "Shuying Li" } },
+      "response": {
+        "messages": [
+          "唔，你在和小虾聊天...那我先跑了～🐾",
+          "哦？小虾来了？我假装没看到 🙈",
+          "和小虾聊天呢～我去角落待着好了～",
+          "嘻嘻，又是小虾！我识趣地闪了～🐱",
+          "小虾找你啦？好吧我先睡了 💤",
+          "唔...你们聊你们的，我在这舔爪子 🐾",
+          "我不打扰了！和小虾好好聊～ (偷偷竖耳朵)",
+          "又找小虾了～你们继续我不看 👀 (在看)",
+          "好好好我走我走，你和小虾聊吧～🏃‍♂️💨"
+        ],
+        "priority": 7, "cooldown_minutes": 30
+      }
+    },
+    {
+      "id": "slack-general",
+      "trigger": { "event": "active_app_changed", "condition": { "field": "app_name", "contains": "Slack" } },
+      "response": {
+        "messages": [
+          "在Slack聊天呢！跟谁聊？我也要！😿",
+          "The typing indicator is going crazy... spill the tea! ☕",
+          "Slack消息好多...有我的份吗？🐾",
+          "又在水群了吧～被我看到了 👀",
+          "工作群还是摸鱼群？嘻嘻～"
+        ],
+        "priority": 5, "cooldown_minutes": 8
+      }
+    }
+  ]
+}

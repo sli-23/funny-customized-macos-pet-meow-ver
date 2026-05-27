@@ -339,8 +339,13 @@
                     <div class="section-desc">Tell the cat who you are. It uses this to personalize messages.</div>
                     <div class="section-panel">
                         <div class="form-group">
-                            <label>Your Nickname</label>
-                            <input type="text" id="userNickname" placeholder="What the pet calls you (e.g. hooman, buddy)">
+                            <label>Your Nicknames</label>
+                            <div class="chip-container has-chips" id="nicknameChips"></div>
+                            <div class="chip-input-row">
+                                <input type="text" id="nicknameInput" class="chip-input" placeholder="Add a nickname..." maxlength="20">
+                                <button class="btn-secondary" onclick="addNickname()">Add</button>
+                            </div>
+                            <input type="hidden" id="userNickname">
                         </div>
                     </div>
                 </div>
@@ -748,20 +753,12 @@
                         <div class="update-version" onclick="this.parentElement.classList.toggle('update-folded')">v1.4 <span class="update-fold-hint"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></span></div>
                         <div class="update-date">May 2026</div>
                         <ul class="update-list">
-                            <li><span class="update-tag new">New</span> Control Panel redesign with Claude Code colors</li>
-                            <li><span class="update-tag new">New</span> RPG-style pet status with ASCII art and stat bars</li>
-                            <li><span class="update-tag new">New</span> CR gossip engine with 3 modes (roast, compare, react)</li>
-                            <li><span class="update-tag new">New</span> Per-teammate Judge button with targeted assessment</li>
-                            <li><span class="update-tag new">New</span> Team stats persistence (team_stats.json)</li>
+                            <li><span class="update-tag new">New</span> Control Panel redesign (Claude Code colors, 3-column layout)</li>
+                            <li><span class="update-tag new">New</span> RPG-style pet status with ASCII art</li>
+                            <li><span class="update-tag new">New</span> CR gossip engine + per-teammate Judge</li>
                             <li><span class="update-tag new">New</span> Workplace module (Slack + Zoom + Chime + Teams)</li>
-                            <li><span class="update-tag new">New</span> Dark/light theme toggle in sidebar</li>
-                            <li><span class="update-tag new">New</span> Ctrl+Cmd+P shortcut to open control panel</li>
-                            <li><span class="update-tag improve">Improve</span> Page reorganization: Connection, Behavior, Identity, Modules, Advanced, Status</li>
-                            <li><span class="update-tag improve">Improve</span> Backend stat commands emit dev-logs with before→after values</li>
-                            <li><span class="update-tag improve">Improve</span> Pet can never die (minimum stat floor = 5)</li>
-                            <li><span class="update-tag fix">Fix</span> Crash on missing window handles (graceful fallback)</li>
-                            <li><span class="update-tag fix">Fix</span> Python3 path fallback for MCP modules</li>
-                            <li><span class="update-tag fix">Fix</span> Config write creates parent directories</li>
+                            <li><span class="update-tag improve">Improve</span> Page reorganization and navigation</li>
+                            <li><span class="update-tag fix">Fix</span> Stability improvements for new users</li>
                         </ul>
                     </div>
                     <div class="update-item update-folded">

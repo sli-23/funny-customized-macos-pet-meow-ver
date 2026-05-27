@@ -545,17 +545,8 @@ listen('meme-reaction', (event) => {
         if (config.nicknames && config.nicknames.length > 0) nicknames = config.nicknames;
     } catch (e) {}
     try {
-        const meow = await invoke('get_meow_profile');
-        if (meow) {
-            if (meow.nicknames && meow.nicknames.length > 0) nicknames = meow.nicknames;
-            if (meow.secret_messages && meow.secret_messages.length > 0) {
-                secretMessages = meow.secret_messages;
-                scheduler.registerModule({
-                    id: 'secret', frequency: 'hourly',
-                    getMessage: async () => pick(secretMessages)
-                });
-            }
-        }
+        const meowNicks = await invoke('get_meow_nicknames');
+        if (meowNicks && meowNicks.length > 0) nicknames = meowNicks;
     } catch (e) {}
     scheduler.start();
 })();

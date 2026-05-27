@@ -190,6 +190,11 @@ fn main() {
             };
             app.manage(runtime_state);
 
+            // Load encrypted .meow profile (before UI opens)
+            let meow_state = runtime::secret_meow::SecretMeowState::try_load();
+            eprintln!("[ClaudeMeow] SecretMeow loaded={}, nicknames={:?}", meow_state.loaded, meow_state.nicknames);
+            runtime::secret_meow::init_global_context(&meow_state);
+
             // Show dev console if dev mode is enabled
             let config = config::load_config();
             if config.dev_mode {
@@ -347,6 +352,9 @@ fn main() {
             runtime::commands::state::context_on_rage,
             runtime::commands::state::context_on_chat,
             runtime::commands::state::get_pet_context,
+            runtime::commands::state::get_meow_nicknames,
+            runtime::commands::state::get_meow_public_info,
+            runtime::commands::state::reload_secret_meow,
             runtime::commands::state::open_external_url,
             runtime::commands::state::clear_chat_history,
             runtime::commands::state::clear_activity_log,

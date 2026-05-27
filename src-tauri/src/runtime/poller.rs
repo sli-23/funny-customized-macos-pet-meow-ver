@@ -5,6 +5,7 @@ use super::event_bus::{EventType, MeowEvent};
 use super::health_reminder::HealthReminder;
 use super::reaction_engine::ReactionEngine;
 use super::screen_time::ScreenTimeTracker;
+use super::secret_meow::SecretMeowState;
 use tauri::{Emitter, Manager};
 
 const HEARTBEAT_INTERVAL_MS: u64 = 300_000;
@@ -61,6 +62,8 @@ pub async fn start_polling(app: tauri::AppHandle) {
         let mut health = HealthReminder::new();
         let mut screen_time = ScreenTimeTracker::new();
         let mut calendar = CalendarReminder::new();
+        let mut secret_meow = SecretMeowState::try_load();
+        super::secret_meow::init_global_context(&secret_meow);
 
         let mut last_heartbeat: u64 = 0;
         let mut was_typing = false;
@@ -99,6 +102,9 @@ pub async fn start_polling(app: tauri::AppHandle) {
 
             // Calendar reminder (delegated)
             calendar.tick(&app, now_secs);
+
+            // Secret meow messages (one at a time from encrypted profile)
+            secret_meow.tick(&app, now_secs);
 
             // Flush cooldowns to disk periodically (batched)
             reaction_engine.flush_if_dirty().await;

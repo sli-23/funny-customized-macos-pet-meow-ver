@@ -91,7 +91,8 @@ async function autoSave() {
         dev_mode: document.getElementById('devMode').checked,
         auth_mode: 'apikey',
         api_key: apiKey,
-        user_nickname: document.getElementById('userNickname').value.trim(),
+        user_nickname: userNicknames[0] || '',
+        nicknames: userNicknames,
         chattiness: parseInt(document.getElementById('chattiness').value),
         sass_level: parseInt(document.getElementById('sassLevel').value),
         language_mix: document.getElementById('languageMix').value,
@@ -177,6 +178,37 @@ async function testApi() {
     }
 }
 
+// ── Nickname Chips ──
+let userNicknames = [];
+
+function renderNicknames() {
+    const container = document.getElementById('nicknameChips');
+    if (!container) return;
+    container.innerHTML = userNicknames.map((nick, i) =>
+        '<span class="chip">' + escHtml(nick) + '<button class="chip-remove" onclick="removeNickname(' + i + ')">×</button></span>'
+    ).join('');
+    container.classList.toggle('has-chips', userNicknames.length > 0);
+    // Sync first nickname to hidden field for auto-save
+    const hidden = document.getElementById('userNickname');
+    if (hidden) hidden.value = userNicknames[0] || '';
+}
+
+function addNickname() {
+    const input = document.getElementById('nicknameInput');
+    const val = input.value.trim();
+    if (!val || userNicknames.includes(val) || userNicknames.length >= 10) return;
+    userNicknames.push(val);
+    input.value = '';
+    renderNicknames();
+    scheduleAutoSave();
+}
+
+function removeNickname(idx) {
+    userNicknames.splice(idx, 1);
+    renderNicknames();
+    scheduleAutoSave();
+}
+
 // ── User Facts (chips) ──
 let userFacts = [];
 
@@ -212,8 +244,10 @@ function saveUserFacts() {
 
 // Enter key to add
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('userFactInput');
-    if (input) input.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addUserFact(); } });
+    const factInput = document.getElementById('userFactInput');
+    if (factInput) factInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addUserFact(); } });
+    const nickInput = document.getElementById('nicknameInput');
+    if (nickInput) nickInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addNickname(); } });
 });
 
 // ── Load Settings ──
@@ -236,7 +270,14 @@ async function loadSettings() {
         document.getElementById('openaiModelId').value = config.openai_model_id || 'gpt-4o-mini';
         document.getElementById('persona').value = config.persona;
         document.getElementById('interval').value = config.interval_minutes;
-        document.getElementById('userNickname').value = config.user_nickname || '';
+        // Load nicknames as chips
+        if (config.user_nickname) {
+            userNicknames = [config.user_nickname];
+        }
+        if (config.nicknames && config.nicknames.length > 0) {
+            userNicknames = config.nicknames;
+        }
+        renderNicknames();
         document.getElementById('activityEnabled').checked = config.activity_enabled !== false;
         document.getElementById('devMode').checked = config.dev_mode || false;
         document.getElementById('chattiness').value = config.chattiness || 3;
@@ -253,6 +294,25 @@ async function loadSettings() {
         updateProviderFields();
         updateStatusRail();
     } catch (e) { console.error('loadSettings:', e); }
+
+    // Load .meow public info (nickname + personality — NOT secrets)
+    try {
+        const meow = await window.__TAURI_INTERNALS__.invoke('get_meow_public_info');
+        if (meow && meow.loaded) {
+            if (meow.nicknames && meow.nicknames.length > 0) {
+                userNicknames = meow.nicknames;
+                renderNicknames();
+            }
+            if (meow.personality) {
+                const meowFacts = meow.personality.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                meowFacts.forEach(f => {
+                    const clean = f.replace(/^(A close friend says about this user: |Their friend says they love )/, '');
+                    if (clean && !userFacts.includes(clean)) userFacts.push(clean);
+                });
+                renderFacts();
+            }
+        }
+    } catch (e) { console.error('[meow] error:', e); }
 }
 
 function toggleDevWindow(enabled) {
@@ -585,6 +645,26 @@ async function scanMeow() {
             container.innerHTML = '<div style="padding:12px;background:rgba(90,158,111,0.08);border:1px solid rgba(90,158,111,0.15);border-radius:8px;">' +
                 '<div style="font-size:14px;font-weight:600;color:var(--success);margin-bottom:6px;">' + (result.from_littleshrimp ? '🦐 ' : '🐱 ') + escHtml(result.message) + '</div>' +
                 '<div style="font-size:11px;color:var(--text-muted);">Files: ' + result.files.map(f => '<code>' + escHtml(f) + '</code>').join(', ') + '</div></div>';
+
+            // Reload .meow and refresh UI with public fields
+            try {
+                await window.__TAURI_INTERNALS__.invoke('reload_secret_meow');
+                const meow = await window.__TAURI_INTERNALS__.invoke('get_meow_public_info');
+                if (meow && meow.loaded) {
+                    if (meow.nicknames && meow.nicknames.length > 0) {
+                        userNicknames = meow.nicknames;
+                        renderNicknames();
+                    }
+                    if (meow.personality) {
+                        const meowFacts = meow.personality.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                        meowFacts.forEach(f => {
+                            const clean = f.replace(/^(A close friend says about this user: |Their friend says they love )/, '');
+                            if (clean && !userFacts.includes(clean)) userFacts.push(clean);
+                        });
+                        renderFacts();
+                    }
+                }
+            } catch(e2) {}
         } else {
             container.innerHTML = '<div style="padding:12px;background:rgba(0,0,0,0.03);border-radius:8px;color:var(--text-muted);">No .meow files found yet</div>';
         }

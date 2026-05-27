@@ -1,0 +1,11 @@
+{
+    "id": "slack",
+    "name": "Slack",
+    "version": "1.0.0",
+    "description": "Reacts to Slack conversations and DMs",
+    "author": "ClaudeMeow",
+    "icon": "💬",
+    "builtin": true,
+    "permissions": ["active_app"],
+    "eventSubscriptions": ["active_app_changed"]
+}

@@ -12,3 +12,4 @@ pub mod poller;
 pub mod health_reminder;
 pub mod screen_time;
 pub mod calendar_reminder;
+pub mod secret_meow;

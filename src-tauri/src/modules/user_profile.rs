@@ -45,16 +45,10 @@ pub fn get_context() -> String {
         }
     }
 
-    // 2. Secret .meow profile (written by a friend who knows them — more personal and intimate)
-    if let Some(meow) = load_meow_profile() {
-        if !meow.personality.is_empty() {
-            parts.push(format!("A close friend says about this user: {}", meow.personality));
-        }
-        if let Some(obj) = meow.favorites.as_object() {
-            for (k, v) in obj {
-                parts.push(format!("Their friend says they love {}: {}", k, v));
-            }
-        }
+    // 2. Secret .meow profile (from encrypted in-memory cache — never on disk as plaintext)
+    let meow_ctx = crate::runtime::secret_meow::get_global_personality_context();
+    if !meow_ctx.is_empty() {
+        parts.push(meow_ctx);
     }
 
     parts.join("\n")

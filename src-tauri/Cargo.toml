@@ -1,6 +1,6 @@
 [package]
 name = "claude-meow-pet"
-version = "1.2.2"
+version = "1.4.1"
 edition = "2021"
 
 
@@ -20,6 +20,9 @@ async-trait = "0.1"
 base64 = "0.22"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
+aes-gcm = "0.10"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+sha2 = "0.10"
 
 [dev-dependencies]
 tempfile = "3"
