@@ -42,6 +42,23 @@ pub fn refresh_team_stats() -> Result<serde_json::Value, String> {
         .unwrap_or(14);
     let days_str = days.to_string();
 
+    // Force refresh commits cache
+    let team_result = crate::runtime::mcp_runner::call_mcp("amazon-internal", &["get-team", "--alias", &user_alias]);
+    if let Ok(team) = &team_result {
+        if let Some(teammates) = team["teammates"].as_array() {
+            let mut all_aliases: Vec<String> = teammates.iter()
+                .filter_map(|t| t.as_str().map(|s| s.to_string()))
+                .collect();
+            all_aliases.push(user_alias.clone());
+            let aliases_str = all_aliases.join(",");
+            let _ = crate::runtime::mcp_runner::call_mcp("amazon-internal", &["get-commits", "--aliases", &aliases_str, "--days", &days_str]);
+        }
+    }
+
+    // Clear comment memory so old commits can be re-gossiped
+    crate::runtime::memory::clear_commented_ids();
+
+    // Refresh stats
     crate::runtime::mcp_runner::call_mcp("amazon-internal", &["get-stats", "--alias", &user_alias, "--days", &days_str])
         .map_err(|e| format!("MCP failed: {}", e))
 }
@@ -105,63 +122,29 @@ pub async fn trigger_cr_comment(app: tauri::AppHandle) -> Result<String, String>
         return Err("No commits found for your team".to_string());
     }
 
-    let commented: Vec<String> = crate::runtime::memory::get_commented_ids();
+    let mut commented: Vec<String> = crate::runtime::memory::get_commented_ids();
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH).unwrap().subsec_nanos();
-    let available: Vec<&serde_json::Value> = commits.iter()
+    let mut available: Vec<&serde_json::Value> = commits.iter()
         .filter(|c| {
             let id = format!("{}:{}", c["author"].as_str().unwrap_or(""), c["title"].as_str().unwrap_or(""));
             !commented.contains(&id)
         })
         .collect();
 
+    // Auto-reset when all commits exhausted — cycle through again with fresh takes
     if available.is_empty() {
-        let expanded = (cr_days_range * 2).min(90);
-        if expanded > cr_days_range {
-            fetch_commits(expanded);
-            if let Ok(data) = std::fs::read_to_string(&commits_path) {
-                if let Ok(expanded_commits) = serde_json::from_str::<Vec<serde_json::Value>>(&data) {
-                    let expanded_available: Vec<&serde_json::Value> = expanded_commits.iter()
-                        .filter(|c| {
-                            let id = format!("{}:{}", c["author"].as_str().unwrap_or(""), c["title"].as_str().unwrap_or(""));
-                            !commented.contains(&id)
-                        })
-                        .collect();
-                    if !expanded_available.is_empty() {
-                        let teammate_exp: Vec<&&serde_json::Value> = expanded_available.iter()
-                            .filter(|c| c["author"].as_str().unwrap_or("") != user_alias)
-                            .collect();
-                        let commit = if !teammate_exp.is_empty() {
-                            *teammate_exp[(nanos as usize) % teammate_exp.len()]
-                        } else {
-                            expanded_available[(nanos as usize) % expanded_available.len()]
-                        };
-                        let author = commit["author"].as_str().unwrap_or("");
-                        let title = commit["title"].as_str().unwrap_or("");
-                        let package = commit["package"].as_str().unwrap_or("");
-                        let changes = commit["changes"].as_u64().unwrap_or(0);
-                        let cfg = crate::config::load_config();
-                        let lang_hint = match cfg.language_mix.as_str() {
-                            "chinese" => "Reply ONLY in Chinese.",
-                            "english" => "Reply ONLY in English.",
-                            _ => "Mix Chinese and English naturally.",
-                        };
-                        let prompt = format!(
-                            "You are a snarky cat reviewing your owner's teammate's code.\nTeammate: \"{}\"\nPackage: \"{}\"\nCommit title: \"{}\"\nFiles changed: {}\n{}\nGenerate ONE short funny/snarky comment (under 50 chars). MUST include the teammate's name. Reference THIS SPECIFIC commit title \"{}\" — do NOT mention unrelated topics. Start with 😼 {}.",
-                            author, package, title, changes, lang_hint, title, author
-                        );
-                        let config = crate::config::load_config();
-                        let message = crate::ai::send_to_ai(&config, &prompt, 80, 0.95).await
-                            .map_err(|e| format!("AI failed: {}", e))?;
-                        let _ = app.emit("module-reaction", serde_json::json!({
-                            "module_id": "amazon-internal", "message": message, "priority": 7,
-                        }));
-                        crate::runtime::memory::mark_commit_commented(&format!("{}:{}", author, title));
-                        return Ok(message);
-                    }
-                }
-            }
-        }
+        crate::runtime::memory::clear_commented_ids();
+        commented = Vec::new();
+        available = commits.iter()
+            .filter(|c| {
+                let id = format!("{}:{}", c["author"].as_str().unwrap_or(""), c["title"].as_str().unwrap_or(""));
+                !commented.contains(&id)
+            })
+            .collect();
+    }
+
+    if available.is_empty() {
         return Err("team很安静...等新代码中 🐱".to_string());
     }
 

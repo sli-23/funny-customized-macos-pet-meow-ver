@@ -69,6 +69,7 @@ select {
     width: 36px;
     height: 20px;
     min-width: 36px;
+    flex-shrink: 0;
     -webkit-appearance: none;
     appearance: none;
     background: var(--toggle-track);
@@ -78,6 +79,7 @@ select {
     transition: background 0.2s;
     border: none;
     padding: 0;
+    margin: 0;
 }
 .toggle input[type="checkbox"]::after {
     content: '';
@@ -203,16 +205,18 @@ select {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
-    line-height: 1;
+    line-height: 0;
     padding: 0;
+    vertical-align: middle;
+    margin-top: -1px;
 }
 .chip-remove:hover {
     background: var(--red);

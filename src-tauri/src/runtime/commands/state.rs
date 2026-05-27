@@ -66,6 +66,46 @@ pub fn get_meow_nicknames() -> Vec<String> {
 }
 
 #[tauri::command]
+pub fn get_system_stats() -> serde_json::Value {
+    use std::process::Command;
+
+    // Memory usage (this process)
+    let pid = std::process::id();
+    let mem = Command::new("ps")
+        .args(["-o", "rss=", "-p", &pid.to_string()])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .and_then(|s| s.trim().parse::<u64>().ok())
+        .map(|kb| format!("{:.1} MB", kb as f64 / 1024.0))
+        .unwrap_or_else(|| "—".to_string());
+
+    // CPU usage (this process, snapshot)
+    let cpu = Command::new("ps")
+        .args(["-o", "%cpu=", "-p", &pid.to_string()])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| format!("{}%", s.trim()))
+        .unwrap_or_else(|| "—".to_string());
+
+    // Uptime (process start time)
+    let uptime = Command::new("ps")
+        .args(["-o", "etime=", "-p", &pid.to_string()])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| "—".to_string());
+
+    serde_json::json!({
+        "memory": mem,
+        "cpu": cpu,
+        "uptime": uptime,
+    })
+}
+
+#[tauri::command]
 pub fn reload_secret_meow() -> Result<(), String> {
     let state = crate::runtime::secret_meow::SecretMeowState::try_load();
     crate::runtime::secret_meow::reload_global_context(&state);

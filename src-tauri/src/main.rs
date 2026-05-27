@@ -352,6 +352,7 @@ fn main() {
             runtime::commands::state::context_on_rage,
             runtime::commands::state::context_on_chat,
             runtime::commands::state::get_pet_context,
+            runtime::commands::state::get_system_stats,
             runtime::commands::state::get_meow_nicknames,
             runtime::commands::state::get_meow_public_info,
             runtime::commands::state::reload_secret_meow,

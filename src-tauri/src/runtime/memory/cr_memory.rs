@@ -55,6 +55,12 @@ pub fn get_commented_ids() -> Vec<String> {
     mem.commented_ids
 }
 
+pub fn clear_commented_ids() {
+    let mut mem = load_cr_memory();
+    mem.commented_ids.clear();
+    save_cr_memory(&mem);
+}
+
 pub fn mark_commit_commented(commit_id: &str) {
     let mut mem = load_cr_memory();
     let period = current_period_start();

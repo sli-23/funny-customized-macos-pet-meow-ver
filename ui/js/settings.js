@@ -86,7 +86,6 @@ async function autoSave() {
         openai_model_id: document.getElementById('openaiModelId').value,
         persona: document.getElementById('persona').value,
         interval_minutes: parseInt(document.getElementById('interval').value),
-        nicknames: [],
         activity_enabled: document.getElementById('activityEnabled').checked,
         dev_mode: document.getElementById('devMode').checked,
         auth_mode: 'apikey',
@@ -204,7 +203,10 @@ function addNickname() {
 }
 
 function removeNickname(idx) {
-    userNicknames.splice(idx, 1);
+    const removed = userNicknames.splice(idx, 1)[0];
+    // Track removed .meow items so they don't come back
+    const dismissed = JSON.parse(localStorage.getItem('meow_dismissed_nicks') || '[]');
+    if (removed && !dismissed.includes(removed)) { dismissed.push(removed); localStorage.setItem('meow_dismissed_nicks', JSON.stringify(dismissed)); }
     renderNicknames();
     scheduleAutoSave();
 }
@@ -232,7 +234,10 @@ function addUserFact() {
 }
 
 function removeUserFact(idx) {
-    userFacts.splice(idx, 1);
+    const removed = userFacts.splice(idx, 1)[0];
+    // Track removed .meow items so they don't come back
+    const dismissed = JSON.parse(localStorage.getItem('meow_dismissed_facts') || '[]');
+    if (removed && !dismissed.includes(removed)) { dismissed.push(removed); localStorage.setItem('meow_dismissed_facts', JSON.stringify(dismissed)); }
     renderFacts();
     saveUserFacts();
 }
@@ -295,24 +300,29 @@ async function loadSettings() {
         updateStatusRail();
     } catch (e) { console.error('loadSettings:', e); }
 
-    // Load .meow public info (nickname + personality — NOT secrets)
+    // Load .meow public info — merge as additional (skip dismissed + duplicates)
     try {
         const meow = await window.__TAURI_INTERNALS__.invoke('get_meow_public_info');
         if (meow && meow.loaded) {
+            const dismissedNicks = JSON.parse(localStorage.getItem('meow_dismissed_nicks') || '[]');
+            const dismissedFacts = JSON.parse(localStorage.getItem('meow_dismissed_facts') || '[]');
+
             if (meow.nicknames && meow.nicknames.length > 0) {
-                userNicknames = meow.nicknames;
+                meow.nicknames.forEach(n => {
+                    if (!userNicknames.includes(n) && !dismissedNicks.includes(n)) userNicknames.push(n);
+                });
                 renderNicknames();
             }
             if (meow.personality) {
                 const meowFacts = meow.personality.split('\n').map(s => s.trim()).filter(s => s.length > 0);
                 meowFacts.forEach(f => {
                     const clean = f.replace(/^(A close friend says about this user: |Their friend says they love )/, '');
-                    if (clean && !userFacts.includes(clean)) userFacts.push(clean);
+                    if (clean && !userFacts.includes(clean) && !dismissedFacts.includes(clean)) userFacts.push(clean);
                 });
                 renderFacts();
             }
         }
-    } catch (e) { console.error('[meow] error:', e); }
+    } catch (e) {}
 }
 
 function toggleDevWindow(enabled) {
@@ -556,8 +566,8 @@ async function testAmazonConnection() {
         if (!alias) { el.innerHTML = '<span style="color:var(--error);">Enter alias</span>'; return; }
         const status = await mcpCall('test-connection', ['--alias', alias]);
         el.innerHTML = '<div style="margin-top:6px;font-size:11px;">' +
-            [['phonetool','PhoneTool'],['code_browser','Code Browser'],['midway_valid','Midway']].map(([k,l]) =>
-                '<span style="margin-right:10px;color:' + (status[k] ? 'var(--success)' : 'var(--error)') + ';">' + (status[k] ? '✓' : '✗') + ' ' + l + '</span>'
+            Object.entries(status).filter(([k]) => typeof status[k] === 'boolean').map(([k, v]) =>
+                '<span style="margin-right:10px;color:' + (v ? 'var(--green)' : 'var(--red)') + ';font-weight:500;">' + (v ? '✓' : '✗') + ' ' + k.replace(/_/g, ' ') + '</span>'
             ).join('') + '</div>';
         const team = await mcpCall('get-team', ['--alias', alias]);
         renderTeamList(team);
@@ -599,26 +609,27 @@ async function judgeTeammate(alias, btnEl) {
     if (judgeInProgress) return;
     judgeInProgress = true;
 
-    // Disable all judge buttons
+    // Disable all judge buttons and animate the clicked one
     document.querySelectorAll('.btn-judge').forEach(b => { b.disabled = true; });
-    if (btnEl) { btnEl.textContent = '...'; btnEl.classList.add('judging'); }
+    if (btnEl) { btnEl.classList.add('judging'); btnEl.innerHTML = '<span class="judge-dots"></span>'; }
 
     try {
-        console.log('[Judge] targeting:', alias);
         const msg = await window.__TAURI_INTERNALS__.invoke('trigger_targeted_gossip', { targetAlias: alias });
-        console.log('[Judge] result:', msg);
-        if (btnEl) { btnEl.classList.remove('judging'); btnEl.textContent = '😼'; }
+        if (btnEl) { btnEl.classList.remove('judging'); btnEl.classList.add('judge-success'); btnEl.textContent = 'Done'; }
         setTimeout(() => {
-            document.querySelectorAll('.btn-judge').forEach(b => { b.disabled = false; b.textContent = 'Judge'; b.classList.remove('judging'); });
+            document.querySelectorAll('.btn-judge').forEach(b => { b.disabled = false; b.textContent = 'Judge'; b.classList.remove('judging', 'judge-success'); });
             judgeInProgress = false;
         }, 3000);
     } catch(e) {
-        console.error('[Judge] error:', e);
-        if (btnEl) { btnEl.classList.remove('judging'); btnEl.textContent = '✗'; }
+        if (btnEl) {
+            btnEl.classList.remove('judging');
+            btnEl.classList.add('judge-fail');
+            btnEl.textContent = 'No data';
+        }
         setTimeout(() => {
-            document.querySelectorAll('.btn-judge').forEach(b => { b.disabled = false; b.textContent = 'Judge'; b.classList.remove('judging'); });
+            document.querySelectorAll('.btn-judge').forEach(b => { b.disabled = false; b.textContent = 'Judge'; b.classList.remove('judging', 'judge-fail', 'judge-success'); });
             judgeInProgress = false;
-        }, 2000);
+        }, 3000);
     }
 }
 
@@ -724,6 +735,20 @@ function updateStatusRail() {
         else { tag.textContent = 'Local'; tag.className = 'rail-tag inactive'; }
     }
 }
+
+// ── System Stats ──
+async function updateSystemStats() {
+    try {
+        const stats = await window.__TAURI_INTERNALS__.invoke('get_system_stats');
+        const el = (id) => document.getElementById(id);
+        if (el('railMemory')) el('railMemory').textContent = stats.memory || '—';
+        if (el('railCpu')) el('railCpu').textContent = stats.cpu || '—';
+        if (el('railUptime')) el('railUptime').textContent = stats.uptime || '—';
+        if (el('railMode')) el('railMode').textContent = stats.cpu === '—' ? 'Offline' : 'Running';
+    } catch (e) {}
+}
+updateSystemStats();
+setInterval(updateSystemStats, 10000);
 
 // ── Quick Actions ──
 function resetConversation() {

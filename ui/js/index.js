@@ -11,8 +11,8 @@ const kaomojis = [
     '<(*ΦωΦ*)>', '(^˵◕ω◕˵^)', '~(=^‥^)/', 'ଲ(ⓛ ω ⓛ)ଲ',
 ];
 function pickNick() {
-    if (userNickname) return userNickname;
-    return nicknames[Math.floor(Math.random() * nicknames.length)];
+    const pool = nicknames.length > 0 ? nicknames : (userNickname ? [userNickname] : ['hooman']);
+    return pool[Math.floor(Math.random() * pool.length)];
 }
 function fillNick(msg) { return msg.replace(/\{n\}/g, pickNick()).replace(/\{k\}/g, pickKao()); }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -98,10 +98,15 @@ const scheduler = {
 
     show(text, opts) {
         const cleanText = text.replace(/\n/g, ' ').trim();
+        // Convert **bold** and *italic* markdown to HTML
+        const htmlText = cleanText
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
         const cls = (opts && opts.cls) ? ' ' + opts.cls : '';
         const inner = document.createElement('div');
         inner.className = 'pixel-bubble-inner';
-        inner.textContent = cleanText;
+        inner.innerHTML = htmlText;
         const bubble = document.createElement('div');
         bubble.className = 'pixel-bubble' + cls;
         bubble.appendChild(inner);
@@ -127,11 +132,9 @@ const scheduler = {
         this.show(text, { animate: true });
         invoke('emit_dev_log', { tag: 'BUBBLE', tagClass: 'reaction', message: '[touch] "' + text + '"' }).catch(() => {});
         invoke('emit_cat_status', { status: '😸 开心地咕噜咕噜...' }).catch(() => {});
-        this.timers.touchIdle = setTimeout(() => {
-            this.timers.hide = setTimeout(() => {
-                this.hide();
-                this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
-            }, this.bubbleDurationMs || 30000);
+        this.timers.hide = setTimeout(() => {
+            this.hide();
+            this.timers.next = setTimeout(() => this.nextIdle(), this.idleGapMs || 180000);
         }, 5000);
     },
 

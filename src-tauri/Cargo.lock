@@ -857,7 +857,7 @@ dependencies = [
 
 [[package]]
 name = "claude-meow-pet"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "aes-gcm",
  "async-trait",

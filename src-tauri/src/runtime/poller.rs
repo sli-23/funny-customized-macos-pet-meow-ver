@@ -68,6 +68,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
         let mut last_heartbeat: u64 = 0;
         let mut was_typing = false;
         let mut last_typing_log: u64 = 0;
+        let mut last_title_log: u64 = 0;
         let mut last_periodic_eval: u64 = 0;
         let mut last_config_load: u64 = 0;
         let mut reaction_cooldown_ms: u64 = 10_000;
@@ -93,6 +94,34 @@ pub async fn start_polling(app: tauri::AppHandle) {
                         let cal_enabled = acfg["calendar_enabled"].as_bool().unwrap_or(false);
                         let alias = acfg["user_alias"].as_str().unwrap_or("").to_string();
                         calendar.update_config(cal_enabled, alias);
+                    }
+                }
+            }
+
+            // Daily commits refresh (every 24h, auto-fetch fresh commits)
+            {
+                let commits_path = super::memory::amazon_data_dir().join("commits.json");
+                let stale = commits_path.exists() && std::fs::metadata(&commits_path).ok()
+                    .and_then(|m| m.modified().ok())
+                    .map(|t| t.elapsed().unwrap_or_default().as_secs() > 86400)
+                    .unwrap_or(false);
+                if stale {
+                    let amazon_config_path = super::memory::amazon_data_dir().join("config.json");
+                    if let Ok(data) = std::fs::read_to_string(&amazon_config_path) {
+                        if let Ok(acfg) = serde_json::from_str::<serde_json::Value>(&data) {
+                            let alias = acfg["user_alias"].as_str().unwrap_or("").to_string();
+                            let days = acfg["cr_days_range"].as_u64().unwrap_or(14).to_string();
+                            if !alias.is_empty() {
+                                if let Ok(team) = super::mcp_runner::call_mcp("amazon-internal", &["get-team", "--alias", &alias]) {
+                                    if let Some(teammates) = team["teammates"].as_array() {
+                                        let mut all: Vec<String> = teammates.iter().filter_map(|t| t.as_str().map(|s| s.to_string())).collect();
+                                        all.push(alias);
+                                        let aliases_str = all.join(",");
+                                        let _ = super::mcp_runner::call_mcp("amazon-internal", &["get-commits", "--aliases", &aliases_str, "--days", &days]);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -187,7 +216,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
                     if dev_mode {
                         if let Some(ref fired) = result {
                             dev_log(&app, "FIRE", "reaction", &format!(
-                                "module=\"{}\" msg=\"{}\"", fired.module_id, fired.message
+                                "module=\"{}\" id=\"{}\"", fired.module_id, fired.reaction_id
                             ));
                         }
                     }
@@ -229,7 +258,8 @@ pub async fn start_polling(app: tauri::AppHandle) {
                 if dev_mode {
                     dev_log(&app, "SWITCH", "event", &format!("→ \"{}\"", app_name));
                 }
-            } else if dev_mode {
+            } else if dev_mode && now_ms - last_title_log > 10_000 {
+                last_title_log = now_ms;
                 dev_log(&app, "APP", "event", &format!("app=\"{}\" title=\"{}\"", app_name, &window_title[..window_title.len().min(40)]));
             }
 
@@ -351,7 +381,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
                 last_reaction_time = now_ms;
                 if dev_mode {
                     dev_log(&app, "FIRE", "reaction", &format!(
-                        "module=\"{}\" id=\"{}\" msg=\"{}\"", fired.module_id, fired.reaction_id, fired.message
+                        "module=\"{}\" id=\"{}\"", fired.module_id, fired.reaction_id
                     ));
                 }
                 let _ = app.emit("module-reaction", serde_json::json!({

@@ -166,6 +166,7 @@
 .btn-judge {
     height: 22px;
     padding: 0 7px;
+    min-width: 42px;
     font-size: 9px;
     font-weight: 500;
     background: transparent;
@@ -174,13 +175,13 @@
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
-    transition: color 0.12s, border-color 0.12s;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
     font-family: 'SF Mono', 'Menlo', monospace;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
 .btn-judge:hover { color: var(--accent); border-color: var(--accent); }
-.btn-judge:disabled { opacity: 0.4; cursor: default; }
+.btn-judge:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
 .btn-judge.judging {
     color: var(--accent);
     border-color: var(--accent);
@@ -202,6 +203,45 @@
 @keyframes judgeSlide {
     0% { left: -40%; }
     100% { left: 100%; }
+}
+.judge-dots::after {
+    content: '...';
+    animation: judgeDots 1.2s steps(3, end) infinite;
+    display: inline-block;
+    width: 12px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+@keyframes judgeDots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+}
+.btn-judge.judge-success {
+    color: var(--green);
+    border-color: var(--green);
+    background: rgba(46, 158, 91, 0.08);
+    font-size: 9px;
+    transform: scale(1.05);
+    animation: judgeSuccess 0.3s ease;
+}
+@keyframes judgeSuccess {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.05); opacity: 1; }
+}
+.btn-judge.judge-fail {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(196, 67, 58, 0.04);
+    font-size: 8px;
+    animation: judgeShake 0.3s ease;
+}
+@keyframes judgeShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
 }
 
 /* ── CR Intelligence ── */

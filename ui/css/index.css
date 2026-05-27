@@ -175,16 +175,21 @@ body:active { cursor: grabbing; }
     bottom: 0;
     transform: translateX(-50%);
     font-family: 'Pixel', monospace;
-    font-size: 11px;
-    font-weight: normal;
+    font-size: 12px;
+    font-weight: bold;
     animation: floatUp 1.2s ease-out forwards;
     pointer-events: none;
     image-rendering: pixelated;
     -webkit-font-smoothing: none;
+    text-shadow:
+        1px 0 0 rgba(0,0,0,0.8),
+        -1px 0 0 rgba(0,0,0,0.8),
+        0 1px 0 rgba(0,0,0,0.8),
+        0 -1px 0 rgba(0,0,0,0.8);
 }
-.float-num.positive { color: #2d8f3e; }
+.float-num.positive { color: #4ade80; }
 .float-num.negative { color: #ff6b6b; }
-.float-num.neutral { color: #5ac8fa; }
+.float-num.neutral { color: #67e8f9; }
 @keyframes floatUp {
     0% { opacity: 1; transform: translateX(-50%) translateY(0); }
     75% { opacity: 1; }
