@@ -50,6 +50,39 @@ const activityFallbacks = {
     typing: ['{n}, 打字好快！🐾', '{n}, 噼里啪啦打字中～', '{n}, 手指不累吗？休息下～', '{n}, 在写什么呀？好好奇！'],
 };
 
+// Fetch API quotes to enrich wisdom pool
+let apiWisdom = [];
+async function fetchWisdomQuotes() {
+    try {
+        const r = await fetch('https://zenquotes.io/api/quotes');
+        const data = await r.json();
+        apiWisdom = data.map(q => q.q + ' — ' + q.a).filter(q => q.length < 80);
+    } catch(e) {}
+    try {
+        const r2 = await fetch('https://v1.hitokoto.cn/?c=k&encode=text');
+        const text = await r2.text();
+        if (text && text.length < 60) apiWisdom.push(text);
+    } catch(e) {}
+}
+fetchWisdomQuotes();
+setInterval(fetchWisdomQuotes, 600000); // refresh every 10 min
+
+const wisdomMessages = [
+    '如果我是一只真正的猫我现在应该在睡觉',
+    '猫的哲学：如果它动了就抓它，如果不动就躺上去',
+    '据说猫能看到平行宇宙...我只看到你在加班',
+    '猫生三大要素：吃饭、睡觉、盯着你看',
+    '我思故我在，我睡故我爽',
+    '世界上最远的距离是键盘和被窝之间',
+    '猫不需要解释自己，你也不需要',
+    '我在你桌面上已经住了很久了...比你的TODO list还久',
+    '如果盯着你看算工作的话我今天很努力了',
+    '我尾巴摇了一下...这是我今天最大的effort',
+    '你看起来需要被一只猫踩一脚键盘',
+    '猫的时间观念：现在、肚子饿、和睡觉',
+    '我假装在睡觉其实在监视你的commit message',
+];
+
 function getActivityFallback(context) {
     const lower = (context || '').toLowerCase();
     let pool = fallbackMessages;
@@ -257,6 +290,13 @@ const scheduler = {
     async runActivity() {
         if (this.channel === 'module') {
             invoke('emit_dev_log', { tag: 'AI', tagClass: 'skip', message: 'skipped — module reaction active' }).catch(() => {});
+            return;
+        }
+        // 20% wisdom/quotes, 80% AI-generated
+        if (Math.random() < 0.2) {
+            const pool = apiWisdom.length > 0 && Math.random() < 0.5 ? apiWisdom : wisdomMessages;
+            const msg = pick(pool);
+            this.onActivity(msg);
             return;
         }
         let context = 'User is at their computer';

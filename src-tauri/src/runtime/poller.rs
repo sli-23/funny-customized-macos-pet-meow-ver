@@ -257,7 +257,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
                 }
 
                 if dev_mode {
-                    dev_log(&app, "SWITCH", "event", &format!("→ \"{}\"", app_name));
+                    dev_log(&app, "SWITCH", "event", &format!("→ \"{}\" title=\"{}\"", app_name, &window_title[..window_title.len().min(40)]));
                 }
             } else if dev_mode && now_ms - last_title_log > 10_000 && window_info != last_logged_title {
                 last_title_log = now_ms;
