@@ -330,7 +330,9 @@ const scheduler = {
             this.idleGapMs = 180000;
             this.bubbleDurationMs = 30000;
         }
-        this.onActivity(fillNick(pick(fallbackMessages)));
+        setTimeout(() => {
+            if (!this.channel) this.onActivity(fillNick(pick(fallbackMessages)));
+        }, 5000);
         setTimeout(() => this.runActivity(), 15000);
     }
 };
@@ -403,6 +405,7 @@ let tapCount = 0;
 let tapResetTimer = null;
 let dragStartPos = null;
 let wasDragged = false;
+let lastTouchTime = 0;
 
 const angryMessages = [
     '够了！！！别碰我！！😡🔥 {k}', '你有完没完！！！💢💢💢',
@@ -428,6 +431,9 @@ petEl.addEventListener('click', (e) => {
     tapResetTimer = setTimeout(() => { tapCount = 0; }, 3000);
     clearTimeout(clickTimer);
     clickTimer = setTimeout(async () => {
+        const now = Date.now();
+        if (now - lastTouchTime < 1000) return; // 1s min gap between touch bubbles
+        lastTouchTime = now;
         if (tapCount >= 5) {
             scheduler.onTouch(fillNick(pick(angryMessages)));
             invoke('pet_angry').catch(() => {});

@@ -64,7 +64,7 @@ impl SecretMeowState {
                     favorites: profile.favorites,
                     secret_messages: profile.secret_messages,
                     secret_idx: 0,
-                    last_secret_fired: 0,
+                    last_secret_fired: crate::util::now_secs(),
                 };
             }
         }

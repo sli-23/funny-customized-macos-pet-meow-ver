@@ -65,7 +65,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
         let mut secret_meow = SecretMeowState::try_load();
         super::secret_meow::init_global_context(&secret_meow);
 
-        let mut last_heartbeat: u64 = 0;
+        let mut last_heartbeat: u64 = crate::util::now_ms();
         let mut was_typing = false;
         let mut last_typing_log: u64 = 0;
         let mut last_title_log: u64 = 0;
@@ -155,8 +155,8 @@ pub async fn start_polling(app: tauri::AppHandle) {
             let window_info = if is_self {
                 if last_window.is_empty() { continue; }
                 last_window.clone()
-            } else if title_part.is_empty() && !last_window.is_empty() {
-                // Transient blank title (app switching tabs internally) — keep previous
+            } else if title_part.is_empty() && !last_window.is_empty() && *app_part == last_app_name {
+                // Transient blank title within SAME app — keep previous
                 last_window.clone()
             } else {
                 raw_trimmed
@@ -245,6 +245,7 @@ pub async fn start_polling(app: tauri::AppHandle) {
 
             if is_app_switch {
                 last_app_name = app_name.clone();
+                last_heartbeat = now_ms;
 
                 // Screen time tracking (delegated)
                 screen_time.on_app_switch(&app, &app_name, now_secs, dev_mode);
@@ -312,9 +313,6 @@ pub async fn start_polling(app: tauri::AppHandle) {
                     Some((site, window_title.clone()))
                 }
             } else {
-                if dev_mode {
-                    dev_log(&app, "APP", "event", &format!("app=\"{}\" title=\"{}\"", app_name, window_title));
-                }
                 None
             };
 

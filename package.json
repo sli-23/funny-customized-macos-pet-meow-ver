@@ -1,6 +1,6 @@
 {
   "name": "claude-meow-pet",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "A pixel art cat desktop pet powered by Claude",
   "scripts": {
     "dev": "cd src-tauri && cargo run",
